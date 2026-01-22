@@ -18,19 +18,21 @@ def summarize_paper(text: str):
     """Use configured LLM to summarize research paper text into sections."""
     provider = get_llm_provider()
     prompt = f"""
-    You are a strict academic assistant. Summarize this research paper text in structured sections.
+    You are an expert academic researcher. Provide a comprehensive, high-detail summary of this research paper.
     
-    IMPORTANT RULES:
-    1. Answer ONLY using the provided text. Do not use outside knowledge.
-    2. Cite the page number for every key point using [Page X] format.
-    3. If the summary cannot be generated from the text, state that.
+    CRITICAL INSTRUCTIONS:
+    1. **Be Comprehensive**: Do not be brief. Expand on every point to provide depth. 
+    2. **Include Data**: You MUST include specific quantitative results, metrics, and exact figures from the paper.
+    3. **Methodology Depth**: Describe the steps, architecture, and mathematical models in detail.
+    4. **Strict Citations**: Cite the page number for every specific claim or figure using [Page X].
+    5. **Source Only**: Use ONLY the provided text.
 
-    Sections:
-    - TL;DR Summary
-    - Abstract Summary
-    - Methodology Overview
-    - Results & Findings
-    - Limitations
+    Sections to Generate:
+    - TL;DR Summary (A thorough paragraph, not just one sentence)
+    - Abstract Summary (Detailed breakdown of the core problem and solution)
+    - Methodology Overview (Deep dive into the technical approach, architecture, and algorithms)
+    - Results & Findings (Comprehensive list of all key metrics, comparisons, and performance numbers)
+    - Limitations (Detailed analysis of constraints and future work mentioned)
 
     Return your answer as structured JSON with keys:
     tldr, abstract, methodology, results, limitations.
@@ -93,7 +95,10 @@ def extract_insights(text: str):
 
     IMPORTANT: Cite the page number where each dataset/algorithm is found, e.g. "ResNet-50 [Page 3]".
 
-    Return JSON with keys: keywords, datasets, algorithms.
+    Return a valid JSON object with specific lowercase keys: "keywords", "datasets", "algorithms".
+    Each key must map to a list of strings.
+    Example: {{ "keywords": ["AI"], "datasets": ["MNIST"], "algorithms": ["CNN"] }}
+    
     Text:
     {text[:10000]}
     """
@@ -117,11 +122,15 @@ def future_research_ideas(text: str):
     provider = get_llm_provider()
     prompt = f"""
     Based on this paper, suggest 3-5 possible future research directions or open problems.
-    Return a numbered list.
+    
+    Return a structured JSON with a single key "suggestions", which is a list of strings.
+    Example: {{ "suggestions": ["Idea 1", "Idea 2", "Idea 3"] }}
+
+    Research Paper Text:
     {text[:8000]}
     """
     response_text = provider.generate_content(prompt)
-    return {"suggestions": response_text.splitlines()}
+    return _extract_json(response_text)
 
 
 # -----------------------------
