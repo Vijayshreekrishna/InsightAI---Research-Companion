@@ -1,79 +1,69 @@
-# Insight-AI
+# Insight-AI – Research Companion
 
-THIS PROJECT WAS A MADE IN GEN AI HACKATAHON LUCKNOW ORGANISED BY GOOGLE DEVELOPERS GROUP 
+**Insight-AI** is a powerful research assistant designed to help students, researchers, and professionals analyze academic papers efficiently. By leveraging advanced Large Language Models (LLMs), it provides simplified summaries, deep comparisons, and actionable future research directions.
 
-This repository contains a Python application for interacting with research papers using AI-powered features. The project is organized as follows:
+## Features
+
+- **🧱 Smart Summary**: Generate comprehensive summaries with TL;DR, methodology, and key results.
+- **💬 Chat with Paper**: Ask questions and get answers grounded strictly in the paper's text with citations.
+- **🆚 Compare Papers**: Upload two papers to see side-by-side differences, similarities, and relative strengths.
+- **🔍 Insights & Future Work**: Extract core algorithms, datasets, and keywords, and generate AI-driven suggestions for future research.
+- **🎧 Voice Summary**: Listen to summaries on the go with built-in text-to-speech.
 
 ## Project Structure
 
 ```
 gdg/
-├── app.py                  # Main application entry point
-├── requirements.txt        # Python dependencies
-├── .env                    # Environment variables (not tracked)
-├── assets/                 # Static assets (CSS, images)
-│   ├── styles.css
-│   └── logo.jpg
-├── pages/                  # Streamlit page modules
+├── app.py                      # Main Streamlit application entry point
+├── requirements.txt            # Python dependencies
+├── assets/                     # UI assets (CSS, images)
+│   └── styles.css
+├── pages/                      # Application pages
 │   ├── _Chat_with_Paper.py
 │   ├── _Compare_Two_Papers.py
 │   ├── _Insights_&_Future_Work.py
 │   └── _Smart_Summary.py
-├── utils/                  # Utility modules
-│   ├── api.py
-│   ├── gemini_api.py
-│   ├── pdf_utils.py
-│   ├── ui_components.py
-│   └── __init__.py
-└── venv/                   # Python virtual environment (not tracked)
+├── utils/                      # Core logic and utilities
+│   ├── api.py                  # Main API dispatcher and prompt logic
+│   ├── gemini_api.py           # Legacy Gemini wrapper (deprecated/referenced)
+│   ├── llm_factory.py          # Multi-provider LLM factory (Gemini, Groq, HF, OpenAI)
+│   ├── pdf_utils.py            # PDF text extraction
+│   └── ui_components.py        # Shared UI elements
+└── .env                        # Configuration (API keys)
 ```
 
-## Features
-- Chat with research papers using AI
-- Compare two papers
-- Generate smart summaries
-- Extract insights and future work
-
 ## Setup
-1. Clone the repository:
-   ```powershell
-   git clone https://github.com/maurya-ashutosh02/gdg
 
-   cd gdg
+1. **Clone the repository:**
+   ```powershell
+   git clone https://github.com/Vijayshreekrishna/InsightAI---Research-Companion.git
+   cd InsightAI---Research-Companion
    ```
-2. Create and activate a virtual environment:
+
+2. **Create a virtual environment:**
    ```powershell
    python -m venv venv
    .\venv\Scripts\activate
    ```
-3. Install dependencies:
+
+3. **Install dependencies:**
    ```powershell
    pip install -r requirements.txt
    ```
-4. Set up your `.env` file with required API keys and settings.
+
+4. **Configure Environment:**
+   Create a `.env` file in the root directory and add your API keys:
+   ```env
+   GEMINI_API_KEY=your_key_here
+   # Optional:
+   GROQ_API_KEY=your_key_here
+   OPENAI_API_KEY=your_key_here
+   ```
 
 ## Usage
-Run the application:
+
+Run the local server:
 ```powershell
 streamlit run app.py
 ```
-
-## Demonstration 
-![Screenshot1](./Screenshot1.png)
-![Screenshot2](./Screenshot2.jpg)
-![Screenshot3](./Screenshot3.jpg)
-
-## License
-![Live Link](https://insight-ai.streamlit.app/)
-
-
-
-
-## License
-![License: MIT](https://github.com/maurya-ashutosh02/gdg/blob/main/LICENSE)
-
-
-
-## Contact
-For questions or contributions mail us at : chitravnashmohandevelops@gmail.com
-or ashutoshmaurya9696@gmail.com
+Open [http://localhost:8501](http://localhost:8501) in your browser.
