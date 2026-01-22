@@ -1,0 +1,6 @@
+.\venv\Scripts\activate
+streamlit run app.py
+
+or 
+
+.\venv\Scripts\python -m streamlit run app.py
