@@ -13,7 +13,7 @@
 ## Project Structure
 
 ```
-gdg/
+Insight-AI/
 ├── app.py                      # Main Streamlit application entry point
 ├── requirements.txt            # Python dependencies
 ├── assets/                     # UI assets (CSS, images)
@@ -55,7 +55,7 @@ gdg/
    Create a `.env` file in the root directory and add your API keys:
    ```env
    GEMINI_API_KEY=your_key_here
-   # Optional:
+    -
    GROQ_API_KEY=your_key_here
    OPENAI_API_KEY=your_key_here
    ```
