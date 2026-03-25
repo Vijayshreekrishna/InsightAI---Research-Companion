@@ -14,6 +14,10 @@ load_dotenv()
 # -----------------------------
 # Helper functions for LLM
 # -----------------------------
+def _truncate(text: str, limit: int) -> str:
+    # pyre-ignore
+    return text[:limit]
+
 def summarize_paper(text: str):
     """Use configured LLM to summarize research paper text into sections."""
     provider = get_llm_provider()
@@ -38,47 +42,58 @@ def summarize_paper(text: str):
     tldr, abstract, methodology, results, limitations.
 
     Research Paper Text:
-    {text[:15000]}
+    {_truncate(text, 15000)}
     """
     response_text = provider.generate_content(prompt)
     return _extract_json(response_text)
 
 
-def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False):
-    """Ask configured LLM a question about the uploaded paper."""
+from typing import Optional
+
+def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False, historical_context: Optional[list] = None):
+    """Ask configured LLM a question about the uploaded paper, optionally augmented with RAG history."""
     provider = get_llm_provider()
-    
+
+    # Build historical context block
+    history_block = ""
+    if historical_context:
+        history_block = "\n\n[Historical Library Context – from past uploaded papers]\n"
+        for hit in historical_context:
+            history_block += f"\n[From: {hit['paper_name']}]\n{hit['text']}\n"
+
     if use_general_knowledge:
         prompt = f"""
-        You are a helpful research assistant. You have access to the following research paper content.
-        
-        Answer the user's question. You may use the paper content AND your general knowledge.
-        
-        IMPORTANT INSTRUCTIONS:
-        1. Prioritize information from the paper.
-        2. If you use information from the paper, cite it with [Page X].
-        3. If the answer requires outside knowledge, you may provide it, but make it clear.
-        
-        Paper Text:
-        {context[:10000]}
+You are a helpful research assistant. You have access to the following research paper content.
 
-        Question:
-        {query}
-        """
+Answer the user's question. You may use the paper content AND your general knowledge.
+
+IMPORTANT INSTRUCTIONS:
+1. Prioritize information from the paper.
+2. If you use information from the paper, cite it with [Page X].
+3. If historical context from past papers is provided, mention which past paper it came from.
+4. If the answer requires outside knowledge, you may provide it, but make it clear.
+
+Paper Text:
+{_truncate(context, 10000)}
+{history_block}
+Question:
+{query}
+"""
     else:
         prompt = f"""
-        You are a strict research assistant. Answer the question ONLY using the provided paper text.
-        If the answer is not in the text, state "I cannot find this information in the paper."
-        
-        IMPORTANT: Provide the page number for your answer using the format [Page X].
-        Example: "The accuracy is 95% [Page 4]."
+You are a strict research assistant. Answer the question using the provided paper text.
+If historical context from past papers is also provided, you may use it and cite the paper name.
+If the answer is not in either source, state "I cannot find this information in the available papers."
 
-        Paper Text:
-        {context[:10000]}
+IMPORTANT: Provide the page number for answers from the current paper using [Page X].
+For historical context answers, cite the paper name in brackets, e.g. [From: paper_name.pdf].
 
-        Question:
-        {query}
-        """
+Paper Text:
+{_truncate(context, 10000)}
+{history_block}
+Question:
+{query}
+"""
 
     response_text = provider.generate_content(prompt)
     return {"answer": response_text}
@@ -100,7 +115,7 @@ def extract_insights(text: str):
     Example: {{ "keywords": ["AI"], "datasets": ["MNIST"], "algorithms": ["CNN"] }}
     
     Text:
-    {text[:10000]}
+    {_truncate(text, 10000)}
     """
     response_text = provider.generate_content(prompt)
     return _extract_json(response_text)
@@ -111,7 +126,7 @@ def simplify_summary(text: str):
     provider = get_llm_provider()
     prompt = f"""
     Simplify this research summary as if explaining to a 15-year-old. Use short, clear sentences:
-    {text[:4000]}
+    {_truncate(text, 4000)}
     """
     response_text = provider.generate_content(prompt)
     return {"simplified": response_text}
@@ -127,7 +142,7 @@ def future_research_ideas(text: str):
     Example: {{ "suggestions": ["Idea 1", "Idea 2", "Idea 3"] }}
 
     Research Paper Text:
-    {text[:8000]}
+    {_truncate(text, 8000)}
     """
     response_text = provider.generate_content(prompt)
     return _extract_json(response_text)
@@ -145,7 +160,10 @@ def call_api(path: str, payload: dict):
     if path == "/summarize":
         return summarize_paper(text)
     elif path == "/chat":
-        return chat_with_paper(query, context, use_general_knowledge)
+        return chat_with_paper(
+            query, context, use_general_knowledge,
+            historical_context=payload.get("historical_context", None)
+        )
     elif path == "/extract":
         return extract_insights(text)
     elif path == "/simplify":
@@ -156,7 +174,14 @@ def call_api(path: str, payload: dict):
         return generate_tts(payload.get("text", ""))
     elif path == "/compare":
         return compare_papers(payload.get("text_a", ""), payload.get("text_b", ""))
-
+    elif path == "/visual-qa":
+        return visual_qa(payload.get("page_content", ""), payload.get("question", ""))
+    elif path == "/podcast-script":
+        return generate_podcast_script(payload.get("text", ""))
+    elif path == "/rag-answer":
+        return rag_answer(payload.get("question", ""), payload.get("chunks", []))
+    elif path == "/rag-add":
+        return rag_add_paper(payload.get("paper_name", ""), payload.get("text", ""))
     else:
         return {"error": f"Unknown path: {path}"}
 
@@ -189,7 +214,7 @@ def generate_tts(text: str):
     try:
         # Shorten overly long text to avoid gTTS limit
         if len(text) > 4500:
-            text = text[:4500] + " ... summary truncated."
+            text = _truncate(text, 4500) + " ... summary truncated."
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp:
             tts = gTTS(text=text, lang="en", slow=False, tld="com")
@@ -223,11 +248,100 @@ def compare_papers(text_a: str, text_b: str):
         - "summary": "string"
 
         --- PAPER A ---
-        {text_a[:15000]}
+        {_truncate(text_a, 15000)}
 
         --- PAPER B ---
-        {text_b[:15000]}
+        {_truncate(text_b, 15000)}
         """
 
         response_text = provider.generate_content(prompt)
         return _extract_json(response_text)
+
+
+# -----------------------------------------------
+# New Module Functions
+# -----------------------------------------------
+
+def visual_qa(page_content: str, question: str) -> dict:
+    """Answer a question about a specific PDF page using its extracted text and tables."""
+    provider = get_llm_provider()
+    prompt = f"""
+You are an expert at interpreting research paper content including tables, figures, and data.
+
+A user is viewing a specific page from a research PDF. Below is the structured content extracted 
+from that page (text + any tables). Answer their question ONLY based on this page content.
+
+If the page contains a table, interpret it carefully and explain the values.
+If a figure is mentioned in the text, describe what it likely represents.
+If the answer is not present on this page, say so clearly.
+
+Page Content:
+{_truncate(page_content, 6000)}
+
+User Question: {question}
+"""
+    response_text = provider.generate_content(prompt)
+    return {"answer": response_text}
+
+
+def generate_podcast_script(text: str) -> dict:
+    """Generate a two-person academic podcast dialogue from paper text."""
+    provider = get_llm_provider()
+    prompt = f"""
+You are a podcast script writer for an academic research show called "InsightCast".
+
+Create a natural, engaging two-person dialogue about the research paper below.
+
+Personas:
+- Dr. Aisha (Expert): A seasoned researcher who explains concepts deeply and cites specifics.
+- Jamie (Host): An enthusiastic, curious interviewer who asks questions a smart non-expert would ask.
+
+Guidelines:
+1. Start with Jamie welcoming the audience and introducing the paper topic.
+2. Cover: the problem being solved, the key methodology, the main results, and why it matters.
+3. Include at least ONE moment where Jamie expresses surprise or excitement at a result.
+4. End with Dr. Aisha giving a forward-looking statement about the research.
+5. Keep it conversational, engaging, and 8–12 dialogue turns total.
+6. Do NOT use asterisks or markdown — plain text only.
+
+Format each line as:
+Jamie: [line]
+Dr. Aisha: [line]
+
+Research Paper:
+{_truncate(text, 8000)}
+"""
+    response_text = provider.generate_content(prompt)
+    return {"script": response_text}
+
+
+def rag_answer(question: str, chunks: list) -> dict:
+    """Answer a question grounded entirely in RAG-retrieved chunks."""
+    provider = get_llm_provider()
+    if not chunks:
+        return {"answer": "No relevant documents found in the library. Please add papers first."}
+
+    context_block = ""
+    for i, chunk in enumerate(chunks):
+        context_block += f"\n[{i+1}. From: {chunk.get('paper_name', 'Unknown')}]\n{chunk.get('text', '')}\n"
+
+    prompt = f"""
+You are a research assistant with access to a library of academic papers.
+
+Answer the user's question using ONLY the retrieved excerpts below.
+For each claim, cite the paper name in brackets, e.g. [From: paper_name.pdf].
+If the information is not in the excerpts, say "This topic was not found in the current library."
+
+Retrieved Excerpts:
+{context_block[:8000]}
+
+Question: {question}
+"""
+    response_text = provider.generate_content(prompt)
+    return {"answer": response_text}
+
+
+def rag_add_paper(paper_name: str, text: str) -> dict:
+    """Add a paper to the RAG library."""
+    from utils.rag_utils import add_paper_to_library
+    return add_paper_to_library(paper_name, text)

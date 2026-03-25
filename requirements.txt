@@ -98,3 +98,8 @@ websockets==14.2
 
 groq
 huggingface_hub
+
+chromadb
+sentence-transformers
+networkx
+pyvis
