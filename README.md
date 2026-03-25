@@ -2,15 +2,21 @@
 
 **Insight-AI** is a powerful research assistant designed to help students, researchers, and professionals analyze academic papers efficiently. By leveraging advanced Large Language Models (LLMs), it provides simplified summaries, deep comparisons, and actionable future research directions.
 
-## Features
+## 📖 Features
 
-- **🧱 Smart Summary**: Generate comprehensive summaries with TL;DR, methodology, and key results.
-- **💬 Chat with Paper**: Ask questions and get answers grounded strictly in the paper's text with citations.
+### Core Modules
+- **🧱 Smart Summary**: Generate comprehensive summaries with TL;DR, methodology, and key results. Includes built-in **Voice Summary** for quick listening.
+- **💬 Chat with Paper**: Ask questions and get answers grounded strictly in the paper’s text with citations and **RAG History** integration.
 - **🆚 Compare Papers**: Upload two papers to see side-by-side differences, similarities, and relative strengths.
 - **🔍 Insights & Future Work**: Extract core algorithms, datasets, and keywords, and generate AI-driven suggestions for future research.
-- **🎧 Voice Summary**: Listen to summaries on the go with built-in text-to-speech.
 
-## Project Structure
+### Advanced Modules
+- **🔬 Visual Q&A**: Select specific PDF pages to analyze tables, figures, and data using visionary extraction (pdfplumber + Groq).
+- **🎙️ Research Pod**: Transform papers into engaging two-person academic podcasts with AI-generated dialogue and audio (gTTS).
+- **📚 Local Insights**: Build a persistent semantic library (ChromaDB) to search and query across all your uploaded research papers.
+- **🕸️ Citation Graph**: Explore interactive citation networks and paper influence powered by OpenAlex and Pyvis.
+
+## 📁 Project Structure
 
 ```
 Insight-AI/
@@ -20,19 +26,26 @@ Insight-AI/
 │   └── styles.css
 ├── pages/                      # Application pages
 │   ├── _Chat_with_Paper.py
+│   ├── _Citation_Graph.py
 │   ├── _Compare_Two_Papers.py
 │   ├── _Insights_&_Future_Work.py
-│   └── _Smart_Summary.py
+│   ├── _Local_Insights.py
+│   ├── _Research_Pod.py
+│   ├── _Smart_Summary.py
+│   └── _Visual_QA.py
 ├── utils/                      # Core logic and utilities
 │   ├── api.py                  # Main API dispatcher and prompt logic
-│   ├── gemini_api.py           # Legacy Gemini wrapper (deprecated/referenced)
+│   ├── citation_utils.py       # OpenAlex and Pyvis network logic
+│   ├── gemini_api.py           # Gemini wrapper
 │   ├── llm_factory.py          # Multi-provider LLM factory (Gemini, Groq, HF, OpenAI)
 │   ├── pdf_utils.py            # PDF text extraction
-│   └── ui_components.py        # Shared UI elements
+│   ├── rag_utils.py            # ChromaDB and Semantic Search
+│   ├── ui_components.py        # Shared UI elements
+│   └── vision_utils.py         # Page rendering and table extraction
 └── .env                        # Configuration (API keys)
 ```
 
-## Setup
+## ⚙️ Setup
 
 1. **Clone the repository:**
    ```powershell
@@ -55,12 +68,12 @@ Insight-AI/
    Create a `.env` file in the root directory and add your API keys:
    ```env
    GEMINI_API_KEY=your_key_here
-    -
    GROQ_API_KEY=your_key_here
    OPENAI_API_KEY=your_key_here
+   HF_TOKEN=your_token_here
    ```
 
-## Usage
+## 🚀 Usage
 
 Run the local server:
 ```powershell
