@@ -54,16 +54,24 @@ def summarize_paper(text: str):
 
 from typing import Optional
 
-def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False, historical_context: Optional[list] = None):
-    """Ask configured LLM a question about the uploaded paper, optionally augmented with RAG history."""
+def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False, 
+                    historical_context: Optional[list] = None, active_paper_chunks: Optional[list] = None):
+    """Ask configured LLM a question about the uploaded paper, optionally augmented with RAG retrieval of relevant snippets."""
     provider = get_llm_provider()
 
-    # Build historical context block
+    # Build historical context block (Search across papers)
     history_block = ""
     if historical_context:
-        history_block = "\n\n[Historical Library Context – from past uploaded papers]\n"
+        history_block = "\n\n[Context from your broader Research Library]\n"
         for hit in historical_context:
             history_block += f"\n[From: {hit['paper_name']}]\n{hit['text']}\n"
+
+    # Build active paper context block (Semantic portions of the current paper)
+    active_rag_block = ""
+    if active_paper_chunks:
+        active_rag_block = "\n\n[Most Relevant Snippets from current paper]\n"
+        for hit in active_paper_chunks:
+            active_rag_block += f"\n{hit['text']}\n"
 
     if use_general_knowledge:
         prompt = f"""
@@ -77,23 +85,23 @@ IMPORTANT INSTRUCTIONS:
 3. If historical context from past papers is provided, mention which past paper it came from.
 4. If the answer requires outside knowledge, you may provide it, but make it clear.
 
-Paper Text:
-{_truncate(context, 10000)}
+Paper Context:
+{active_rag_block if active_rag_block else _truncate(context, 10000)}
 {history_block}
 Question:
 {query}
 """
     else:
         prompt = f"""
-You are a strict research assistant. Answer the question using the provided paper text.
+You are a strict research assistant. Answer the question using the provided paper text or snippets.
 If historical context from past papers is also provided, you may use it and cite the paper name.
 If the answer is not in either source, state "I cannot find this information in the available papers."
 
-IMPORTANT: Provide the page number for answers from the current paper using [Page X].
+IMPORTANT: Provide the page number (if available) for answers from the current paper.
 For historical context answers, cite the paper name in brackets, e.g. [From: paper_name.pdf].
 
-Paper Text:
-{_truncate(context, 10000)}
+Paper Context:
+{active_rag_block if active_rag_block else _truncate(context, 10000)}
 {history_block}
 Question:
 {query}
@@ -166,7 +174,8 @@ def call_api(path: str, payload: dict):
     elif path == "/chat":
         return chat_with_paper(
             query, context, use_general_knowledge,
-            historical_context=payload.get("historical_context", None)
+            historical_context=payload.get("historical_context", None),
+            active_paper_chunks=payload.get("active_paper_chunks", None)
         )
     elif path == "/extract":
         return extract_insights(text)
