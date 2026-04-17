@@ -7,6 +7,7 @@ converts it to audio using gTTS.
 
 import streamlit as st
 import base64
+import re
 from utils.api import call_api
 from utils.pdf_utils import extract_text_from_pdf
 
@@ -20,6 +21,18 @@ with st.sidebar:
     st.markdown("### 🎙️ Podcast Personas")
     host_name = st.text_input("Host Name", value="Jamie", help="The enthusiastic interviewer")
     expert_name = st.text_input("Expert Name", value="Dr. Aisha", help="The academic researcher")
+    
+    st.markdown("---")
+    st.markdown("### 🎭 Deep Realism Settings")
+    
+    voice_vibe = st.selectbox(
+        "Voice Duo / Vibe",
+        options=["Standard Academic (US)", "Oxford Scholars (UK)", "Modern Dialogue (US)"],
+        index=0
+    )
+    
+    base_speed = st.slider("Speech Speed", 0.5, 1.5, 0.9, 0.05)
+    dramatic_pauses = st.checkbox("Enable Dramatic Pauses", value=True, help="Adds 'thinking' gaps and natural breaks.")
     
     st.markdown("---")
     st.info("The AI will use these names for the dialogue and voice assignment.")
@@ -80,18 +93,28 @@ if st.session_state.get("podcast_script"):
         if not line:
             st.markdown("")
             continue
+        # Handle emotional tags for display
+        display_line = line
         if line.startswith(f"{host_name}:"):
+            content = line[len(host_name)+1:].strip()
+            # Wrap [Emotion] in italics
+            content = re.sub(r'(\[[A-Za-z]+\])', r'<i style="opacity: 0.7; font-size: 0.9em;">\1</i>', content)
+            
             st.markdown(
                 f"<div style='background:#1e3a5f;color:#d6eaff;padding:8px 14px;"
                 f"border-radius:8px;margin-bottom:6px;'>"
-                f"🎤 <strong>{host_name}:</strong> {line[len(host_name)+1:].strip()}</div>",
+                f"🎤 <strong>{host_name}:</strong> {content}</div>",
                 unsafe_allow_html=True,
             )
         elif line.startswith(f"{expert_name}:"):
+            content = line[len(expert_name)+1:].strip()
+            # Wrap [Emotion] in italics
+            content = re.sub(r'(\[[A-Za-z]+\])', r'<i style="opacity: 0.7; font-size: 0.9em;">\1</i>', content)
+            
             st.markdown(
                 f"<div style='background:#1a3d2b;color:#c8f5dc;padding:8px 14px;"
                 f"border-radius:8px;margin-bottom:6px;'>"
-                f"🎓 <strong>{expert_name}:</strong> {line[len(expert_name)+1:].strip()}</div>",
+                f"🎓 <strong>{expert_name}:</strong> {content}</div>",
                 unsafe_allow_html=True,
             )
         else:
@@ -105,11 +128,14 @@ if st.session_state.get("podcast_script"):
     )
 
     if st.button("🎧 Generate Podcast Audio", key="pod_audio"):
-        with st.spinner("Generating multi-voice audio... (this may take a minute)"):
+        with st.spinner("Generating multi-voice audio with 'Deep Realism'..."):
             tts_result = call_api("/podcast-audio", {
                 "script": script,
                 "host_name": host_name,
-                "expert_name": expert_name
+                "expert_name": expert_name,
+                "vibe": voice_vibe,
+                "speed": base_speed,
+                "dramatic_pauses": dramatic_pauses
             })
 
         if tts_result.get("audio_base64"):

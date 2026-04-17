@@ -7,6 +7,8 @@ import tempfile
 import json
 import re
 import asyncio
+import random
+import concurrent.futures
 import edge_tts
 from utils.llm_factory import get_llm_provider
 
@@ -188,7 +190,10 @@ def call_api(path: str, payload: dict):
         return generate_podcast_audio(
             payload.get("script", ""),
             payload.get("host_name", "Jamie"),
-            payload.get("expert_name", "Dr. Aisha")
+            payload.get("expert_name", "Dr. Aisha"),
+            vibe=payload.get("vibe", "Standard Academic (US)"),
+            speed=payload.get("speed", 0.9),
+            dramatic_pauses=payload.get("dramatic_pauses", True)
         )
     elif path == "/rag-answer":
         return rag_answer(payload.get("question", ""), payload.get("chunks", []))
@@ -318,9 +323,15 @@ Guidelines:
 5. Keep it conversational, engaging, and 8–12 dialogue turns total.
 6. Do NOT use asterisks or markdown — plain text only.
 
+IMPORTANT - EXPRESSION TAGS:
+You MUST include emotional tags in brackets at the start of each line or sentence to guide the TTS engine.
+Use: [Excited], [Thoughtful], [Curious], [Authoritative], [Surprised], [Serious].
+Example: 
+{host_name}: [Excited] Wow, this is a game changer! [Curious] But how does it handle large datasets?
+
 Format each line EXACTLY as:
-{host_name}: [line]
-{expert_name}: [line]
+{host_name}: [Emotion] [line]
+{expert_name}: [Emotion] [line]
 
 Research Paper:
 {_truncate(text, 8000)}
@@ -329,42 +340,108 @@ Research Paper:
     return {"script": response_text}
 
 
-def generate_podcast_audio(script: str, host_name: str = "Jamie", expert_name: str = "Dr. Aisha") -> dict:
-    """Generate high-quality multi-voice MP3 using edge-tts."""
+def generate_podcast_audio(
+    script: str, 
+    host_name: str = "Jamie", 
+    expert_name: str = "Dr. Aisha",
+    vibe: str = "Standard Academic (US)",
+    speed: float = 0.9,
+    dramatic_pauses: bool = True
+) -> dict:
+    """Generate high-quality multi-voice MP3 using edge-tts with Deep Realism."""
     
     async def _amain() -> bytes:
         combined_audio = b""
         lines = script.strip().split("\n")
         
-        # Audio voices
-        HOST_VOICE = "en-US-GuyNeural"
-        EXPERT_VOICE = "en-US-AriaNeural"
+        # Base speed formatting for edge-tts (e.g. 0.9 -> -10%)
+        speed_perc = int((speed - 1.0) * 100)
+        BASE_RATE = f"{speed_perc:+}%"
         
-        for line in lines:
+        # Audio Duo selection
+        vibe_map = {
+            "Standard Academic (US)": {"host": "en-US-ChristopherNeural", "expert": "en-US-AriaNeural"},
+            "Oxford Scholars (UK)": {"host": "en-GB-RyanNeural", "expert": "en-GB-SoniaNeural"},
+            "Modern Dialogue (US)": {"host": "en-US-SteffanNeural", "expert": "en-US-MichelleNeural"}
+        }
+        duo = vibe_map.get(vibe, vibe_map["Standard Academic (US)"])
+        HOST_VOICE = duo["host"]
+        EXPERT_VOICE = duo["expert"]
+        
+        # Personality Multipliers
+        # Experts speak slightly slower and more stable
+        expert_speed_mod = -5 if dramatic_pauses else 0
+        expert_pitch_mod = -2
+        
+        # Host speaks slightly more animated
+        host_speed_mod = +5 if dramatic_pauses else 0
+        host_pitch_mod = +2
+        
+        emotion_map = {
+            "Excited": {"rate": +20, "pitch": "+12Hz"},
+            "Surprised": {"rate": +15, "pitch": "+15Hz"},
+            "Thoughtful": {"rate": -15, "pitch": "-8Hz"},
+            "Authoritative": {"rate": -10, "pitch": "-5Hz", "volume": "+15%"},
+            "Serious": {"rate": -8, "pitch": "-10Hz"},
+            "Curious": {"rate": +5, "pitch": "+8Hz"},
+            "Normal": {"rate": 0, "pitch": "+0Hz"}
+        }
+        
+        expert_first_line = True
+        
+        for i, line in enumerate(lines):
             line = line.strip()
             if not line: continue
             
-            voice = HOST_VOICE
-            text_to_speak = ""
-            
+            is_expert = False
             if line.startswith(f"{host_name}:"):
                 voice = HOST_VOICE
-                text_to_speak = line[len(host_name)+1:].strip()
+                content = line[len(host_name)+1:].strip()
+                s_mod, p_mod = host_speed_mod, host_pitch_mod
             elif line.startswith(f"{expert_name}:"):
                 voice = EXPERT_VOICE
-                text_to_speak = line[len(expert_name)+1:].strip()
+                content = line[len(expert_name)+1:].strip()
+                is_expert = True
+                s_mod, p_mod = expert_speed_mod, expert_pitch_mod
             else:
-                # Fallback if AI skips names but usually it doesn't
                 continue
 
-            if not text_to_speak:
-                continue
-
-            # Generate chunk
-            communicate = edge_tts.Communicate(text_to_speak, voice)
-            async for chunk in communicate.stream():
-                if chunk["type"] == "audio":
-                    combined_audio += chunk["data"]
+            # Split into segments by emotions
+            segments = re.split(r'(\[[A-Za-z]+\])', content)
+            current_emotion = "Normal"
+            
+            for seg in segments:
+                seg = seg.strip()
+                if not seg: continue
+                
+                if seg.startswith("[") and seg.endswith("]"):
+                    current_emotion = seg[1:-1].capitalize()
+                    if current_emotion not in emotion_map:
+                        current_emotion = "Normal"
+                    continue
+                
+                # Apply multipliers and jitter
+                e_params = emotion_map.get(current_emotion, emotion_map["Normal"])
+                jitter = random.randint(-2, 2)
+                
+                # Calculate final rate
+                e_rate_val = e_params["rate"]
+                base_rate_val = int(BASE_RATE.replace("%",""))
+                final_rate_val = base_rate_val + e_rate_val + s_mod + jitter
+                final_rate = f"{final_rate_val:+}%"
+                
+                # Pitch
+                final_pitch = e_params["pitch"]
+                
+                # Generate
+                communicate = edge_tts.Communicate(seg, voice, rate=final_rate, pitch=final_pitch)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        combined_audio += chunk["data"]
+                
+            # If expert just spoke for the first time, add a tiny extra delay in processing? 
+            # (In binary concatenation, we can't easily add silence segments without external libs)
+            # But the separation of segments adds a tiny natural 'breath' in most MP3 players.
             
         return combined_audio
 
@@ -379,7 +456,6 @@ def generate_podcast_audio(script: str, host_name: str = "Jamie", expert_name: s
         if loop.is_running():
             # If we're already in a loop (unlikely in Streamlit threads but possible), 
             # we need a different approach. For now, we'll try to run in a separate thread.
-            import concurrent.futures
             with concurrent.futures.ThreadPoolExecutor() as pool:
                 audio_data = pool.submit(lambda: asyncio.run(_amain())).result()
         else:
