@@ -103,3 +103,5 @@ chromadb
 sentence-transformers
 networkx
 pyvis
+fpdf2
+python-docx==1.1.2

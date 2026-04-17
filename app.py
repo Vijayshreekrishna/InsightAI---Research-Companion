@@ -1,4 +1,4 @@
-﻿# app.py
+# app.py
 import streamlit as st
 from utils.ui_components import load_css, title_banner
 from utils.pdf_utils import extract_text_from_pdf
@@ -39,6 +39,7 @@ st.sidebar.markdown("- 🔬 **Visual Q&A** — Interrogate specific PDF pages")
 st.sidebar.markdown("- 🎙️ **Research Pod** — Podcast-style audio summaries")
 st.sidebar.markdown("- 📚 **Local Insights** — Semantic RAG library")
 st.sidebar.markdown("- 🕸️ **Citation Graph** — Citation influence network")
+st.sidebar.markdown("- 📝 **Paper Formatter AI** — Format research drafts")
 st.sidebar.markdown("---")
 
 

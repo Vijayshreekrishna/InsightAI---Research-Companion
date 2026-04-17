@@ -12,9 +12,17 @@ from utils.pdf_utils import extract_text_from_pdf
 
 st.title("🎙️ Research Pod")
 st.markdown(
-    "Transform any research paper into an engaging **two-person academic podcast** "
-    "between *Dr. Aisha (Expert)* and *Jamie (Host)*."
+    "Transform any research paper into an engaging **two-person academic podcast**."
 )
+
+# ── Podcast Settings ──────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown("### 🎙️ Podcast Personas")
+    host_name = st.text_input("Host Name", value="Jamie", help="The enthusiastic interviewer")
+    expert_name = st.text_input("Expert Name", value="Dr. Aisha", help="The academic researcher")
+    
+    st.markdown("---")
+    st.info("The AI will use these names for the dialogue and voice assignment.")
 
 st.markdown("---")
 
@@ -46,11 +54,17 @@ if not paper_text:
 # ── Generate Podcast Script ────────────────────────────────────────────────────
 if paper_text:
     if st.button("🎬 Generate Podcast Script", key="pod_generate"):
-        with st.spinner("Writing podcast dialogue... (this may take 20–40 seconds)"):
-            result = call_api("/podcast-script", {"text": paper_text})
+        with st.spinner(f"Writing podcast dialogue for {host_name} and {expert_name}..."):
+            result = call_api("/podcast-script", {
+                "text": paper_text,
+                "host_name": host_name,
+                "expert_name": expert_name
+            })
         if "script" in result:
             st.session_state["podcast_script"] = result["script"]
             st.session_state["podcast_paper_name"] = paper_name
+            st.session_state["pod_host"] = host_name
+            st.session_state["pod_expert"] = expert_name
         else:
             st.error(result.get("error", "Script generation failed."))
 
@@ -66,18 +80,18 @@ if st.session_state.get("podcast_script"):
         if not line:
             st.markdown("")
             continue
-        if line.startswith("Jamie:"):
+        if line.startswith(f"{host_name}:"):
             st.markdown(
                 f"<div style='background:#1e3a5f;color:#d6eaff;padding:8px 14px;"
                 f"border-radius:8px;margin-bottom:6px;'>"
-                f"🎤 <strong>Jamie:</strong> {line[6:].strip()}</div>",
+                f"🎤 <strong>{host_name}:</strong> {line[len(host_name)+1:].strip()}</div>",
                 unsafe_allow_html=True,
             )
-        elif line.startswith("Dr. Aisha:"):
+        elif line.startswith(f"{expert_name}:"):
             st.markdown(
                 f"<div style='background:#1a3d2b;color:#c8f5dc;padding:8px 14px;"
                 f"border-radius:8px;margin-bottom:6px;'>"
-                f"🎓 <strong>Dr. Aisha:</strong> {line[10:].strip()}</div>",
+                f"🎓 <strong>{expert_name}:</strong> {line[len(expert_name)+1:].strip()}</div>",
                 unsafe_allow_html=True,
             )
         else:
@@ -87,26 +101,16 @@ if st.session_state.get("podcast_script"):
     st.markdown("---")
     st.markdown("#### 🔊 Generate Audio")
     st.info(
-        "Audio is generated as a single voice (gTTS). For best results, the script "
-        "is read sequentially with speaker labels included."
+        f"Generate high-quality **multi-voice audio** using artificial intelligence."
     )
 
     if st.button("🎧 Generate Podcast Audio", key="pod_audio"):
-        # Prepare a clean version with speaker labels pronounced naturally
-        clean_lines = []
-        for line in script.strip().split("\n"):
-            line = line.strip()
-            if line.startswith("Jamie:"):
-                clean_lines.append("Jamie says: " + line[6:].strip())
-            elif line.startswith("Dr. Aisha:"):
-                clean_lines.append("Doctor Aisha says: " + line[10:].strip())
-            elif line:
-                clean_lines.append(line)
-
-        tts_text = "\n\n".join(clean_lines)
-
-        with st.spinner("Generating audio... (this takes a moment)"):
-            tts_result = call_api("/tts", {"text": tts_text[:4500]})
+        with st.spinner("Generating multi-voice audio... (this may take a minute)"):
+            tts_result = call_api("/podcast-audio", {
+                "script": script,
+                "host_name": host_name,
+                "expert_name": expert_name
+            })
 
         if tts_result.get("audio_base64"):
             audio_bytes = base64.b64decode(tts_result["audio_base64"])
