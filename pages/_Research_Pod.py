@@ -124,7 +124,7 @@ if st.session_state.get("podcast_script"):
     st.markdown("---")
     st.markdown("#### 🔊 Generate Audio")
     st.info(
-        f"Generate high-quality **multi-voice audio** using artificial intelligence."
+        "Generate high-quality **multi-voice audio** using artificial intelligence."
     )
 
     if st.button("🎧 Generate Podcast Audio", key="pod_audio"):
