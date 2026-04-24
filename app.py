@@ -90,7 +90,10 @@ with st.sidebar:
 st.markdown("""
 <div class="hero-section">
     <div class="hero-title">INSIGHT-AI</div>
-    <div style="font-size: 1.3rem; color: #94a3b8; font-weight: 500;">
+    <div style="font-size: 1.5rem; color: #3b82f6; font-weight: 700; margin-top: -10px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 2px;">
+        The Sovereign Research Workstation
+    </div>
+    <div style="font-size: 1.1rem; color: #94a3b8; font-weight: 500;">
         Welcome to <strong>Insight-AI</strong> 👋 — head to the tabs to begin.
     </div>
 </div>
