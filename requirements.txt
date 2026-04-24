@@ -3,6 +3,7 @@ groq
 google-generativeai
 edge-tts
 fpdf2
+python-docx
 python-dotenv
 openai
 PyPDF2
