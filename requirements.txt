@@ -9,6 +9,9 @@ PyPDF2
 pyvis
 gTTS
 huggingface_hub
+pdfplumber
+pypdfium2
+Pillow
 numpy
 pandas
 matplotlib
