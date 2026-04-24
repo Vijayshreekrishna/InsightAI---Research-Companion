@@ -6,6 +6,10 @@ import base64
 import tempfile
 import json
 import re
+import asyncio
+import random
+import concurrent.futures
+import edge_tts
 from utils.llm_factory import get_llm_provider
 
 # Load environment variables (from .env)
@@ -50,16 +54,24 @@ def summarize_paper(text: str):
 
 from typing import Optional
 
-def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False, historical_context: Optional[list] = None):
-    """Ask configured LLM a question about the uploaded paper, optionally augmented with RAG history."""
+def chat_with_paper(query: str, context: str, use_general_knowledge: bool = False, 
+                    historical_context: Optional[list] = None, active_paper_chunks: Optional[list] = None):
+    """Ask configured LLM a question about the uploaded paper, optionally augmented with RAG retrieval of relevant snippets."""
     provider = get_llm_provider()
 
-    # Build historical context block
+    # Build historical context block (Search across papers)
     history_block = ""
     if historical_context:
-        history_block = "\n\n[Historical Library Context – from past uploaded papers]\n"
+        history_block = "\n\n[Context from your broader Research Library]\n"
         for hit in historical_context:
             history_block += f"\n[From: {hit['paper_name']}]\n{hit['text']}\n"
+
+    # Build active paper context block (Semantic portions of the current paper)
+    active_rag_block = ""
+    if active_paper_chunks:
+        active_rag_block = "\n\n[Most Relevant Snippets from current paper]\n"
+        for hit in active_paper_chunks:
+            active_rag_block += f"\n{hit['text']}\n"
 
     if use_general_knowledge:
         prompt = f"""
@@ -73,23 +85,23 @@ IMPORTANT INSTRUCTIONS:
 3. If historical context from past papers is provided, mention which past paper it came from.
 4. If the answer requires outside knowledge, you may provide it, but make it clear.
 
-Paper Text:
-{_truncate(context, 10000)}
+Paper Context:
+{active_rag_block if active_rag_block else _truncate(context, 10000)}
 {history_block}
 Question:
 {query}
 """
     else:
         prompt = f"""
-You are a strict research assistant. Answer the question using the provided paper text.
+You are a strict research assistant. Answer the question using the provided paper text or snippets.
 If historical context from past papers is also provided, you may use it and cite the paper name.
 If the answer is not in either source, state "I cannot find this information in the available papers."
 
-IMPORTANT: Provide the page number for answers from the current paper using [Page X].
+IMPORTANT: Provide the page number (if available) for answers from the current paper.
 For historical context answers, cite the paper name in brackets, e.g. [From: paper_name.pdf].
 
-Paper Text:
-{_truncate(context, 10000)}
+Paper Context:
+{active_rag_block if active_rag_block else _truncate(context, 10000)}
 {history_block}
 Question:
 {query}
@@ -162,7 +174,8 @@ def call_api(path: str, payload: dict):
     elif path == "/chat":
         return chat_with_paper(
             query, context, use_general_knowledge,
-            historical_context=payload.get("historical_context", None)
+            historical_context=payload.get("historical_context", None),
+            active_paper_chunks=payload.get("active_paper_chunks", None)
         )
     elif path == "/extract":
         return extract_insights(text)
@@ -177,11 +190,26 @@ def call_api(path: str, payload: dict):
     elif path == "/visual-qa":
         return visual_qa(payload.get("page_content", ""), payload.get("question", ""))
     elif path == "/podcast-script":
-        return generate_podcast_script(payload.get("text", ""))
+        return generate_podcast_script(
+            payload.get("text", ""),
+            payload.get("host_name", "Jamie"),
+            payload.get("expert_name", "Dr. Aisha")
+        )
+    elif path == "/podcast-audio":
+        return generate_podcast_audio(
+            payload.get("script", ""),
+            payload.get("host_name", "Jamie"),
+            payload.get("expert_name", "Dr. Aisha"),
+            vibe=payload.get("vibe", "Standard Academic (US)"),
+            speed=payload.get("speed", 0.9),
+            dramatic_pauses=payload.get("dramatic_pauses", True)
+        )
     elif path == "/rag-answer":
         return rag_answer(payload.get("question", ""), payload.get("chunks", []))
     elif path == "/rag-add":
         return rag_add_paper(payload.get("paper_name", ""), payload.get("text", ""))
+    elif path == "/format-paper":
+        return generate_formatted_paper(payload.get("title", ""), payload.get("text", ""))
     else:
         return {"error": f"Unknown path: {path}"}
 
@@ -284,7 +312,7 @@ User Question: {question}
     return {"answer": response_text}
 
 
-def generate_podcast_script(text: str) -> dict:
+def generate_podcast_script(text: str, host_name: str = "Jamie", expert_name: str = "Dr. Aisha") -> dict:
     """Generate a two-person academic podcast dialogue from paper text."""
     provider = get_llm_provider()
     prompt = f"""
@@ -293,26 +321,163 @@ You are a podcast script writer for an academic research show called "InsightCas
 Create a natural, engaging two-person dialogue about the research paper below.
 
 Personas:
-- Dr. Aisha (Expert): A seasoned researcher who explains concepts deeply and cites specifics.
-- Jamie (Host): An enthusiastic, curious interviewer who asks questions a smart non-expert would ask.
+- {expert_name} (Expert): A seasoned researcher who explains concepts deeply and cites specifics.
+- {host_name} (Host): An enthusiastic, curious interviewer who asks questions a smart non-expert would ask.
 
 Guidelines:
-1. Start with Jamie welcoming the audience and introducing the paper topic.
+1. Start with {host_name} welcoming the audience and introducing the paper topic.
 2. Cover: the problem being solved, the key methodology, the main results, and why it matters.
-3. Include at least ONE moment where Jamie expresses surprise or excitement at a result.
-4. End with Dr. Aisha giving a forward-looking statement about the research.
+3. Include at least ONE moment where {host_name} expresses surprise or excitement at a result.
+4. End with {expert_name} giving a forward-looking statement about the research.
 5. Keep it conversational, engaging, and 8–12 dialogue turns total.
 6. Do NOT use asterisks or markdown — plain text only.
 
-Format each line as:
-Jamie: [line]
-Dr. Aisha: [line]
+IMPORTANT - EXPRESSION TAGS:
+You MUST include emotional tags in brackets at the start of each line or sentence to guide the TTS engine.
+Use: [Excited], [Thoughtful], [Curious], [Authoritative], [Surprised], [Serious].
+Example: 
+{host_name}: [Excited] Wow, this is a game changer! [Curious] But how does it handle large datasets?
+
+Format each line EXACTLY as:
+{host_name}: [Emotion] [line]
+{expert_name}: [Emotion] [line]
 
 Research Paper:
 {_truncate(text, 8000)}
 """
     response_text = provider.generate_content(prompt)
     return {"script": response_text}
+
+
+def generate_podcast_audio(
+    script: str, 
+    host_name: str = "Jamie", 
+    expert_name: str = "Dr. Aisha",
+    vibe: str = "Standard Academic (US)",
+    speed: float = 0.9,
+    dramatic_pauses: bool = True
+) -> dict:
+    """Generate high-quality multi-voice MP3 using edge-tts with Deep Realism."""
+    
+    async def _amain() -> bytes:
+        combined_audio = b""
+        lines = script.strip().split("\n")
+        
+        # Base speed formatting for edge-tts (e.g. 0.9 -> -10%)
+        speed_perc = int((speed - 1.0) * 100)
+        BASE_RATE = f"{speed_perc:+}%"
+        
+        # Audio Duo selection
+        vibe_map = {
+            "Standard Academic (US)": {"host": "en-US-ChristopherNeural", "expert": "en-US-AriaNeural"},
+            "Oxford Scholars (UK)": {"host": "en-GB-RyanNeural", "expert": "en-GB-SoniaNeural"},
+            "Modern Dialogue (US)": {"host": "en-US-SteffanNeural", "expert": "en-US-MichelleNeural"}
+        }
+        duo = vibe_map.get(vibe, vibe_map["Standard Academic (US)"])
+        HOST_VOICE = duo["host"]
+        EXPERT_VOICE = duo["expert"]
+        
+        # Personality Multipliers
+        # Experts speak slightly slower and more stable
+        expert_speed_mod = -5 if dramatic_pauses else 0
+        expert_pitch_mod = -2
+        
+        # Host speaks slightly more animated
+        host_speed_mod = +5 if dramatic_pauses else 0
+        host_pitch_mod = +2
+        
+        emotion_map = {
+            "Excited": {"rate": +20, "pitch": "+12Hz"},
+            "Surprised": {"rate": +15, "pitch": "+15Hz"},
+            "Thoughtful": {"rate": -15, "pitch": "-8Hz"},
+            "Authoritative": {"rate": -10, "pitch": "-5Hz", "volume": "+15%"},
+            "Serious": {"rate": -8, "pitch": "-10Hz"},
+            "Curious": {"rate": +5, "pitch": "+8Hz"},
+            "Normal": {"rate": 0, "pitch": "+0Hz"}
+        }
+        
+        expert_first_line = True
+        
+        for i, line in enumerate(lines):
+            line = line.strip()
+            if not line: continue
+            
+            is_expert = False
+            if line.startswith(f"{host_name}:"):
+                voice = HOST_VOICE
+                content = line[len(host_name)+1:].strip()
+                s_mod, p_mod = host_speed_mod, host_pitch_mod
+            elif line.startswith(f"{expert_name}:"):
+                voice = EXPERT_VOICE
+                content = line[len(expert_name)+1:].strip()
+                is_expert = True
+                s_mod, p_mod = expert_speed_mod, expert_pitch_mod
+            else:
+                continue
+
+            # Split into segments by emotions
+            segments = re.split(r'(\[[A-Za-z]+\])', content)
+            current_emotion = "Normal"
+            
+            for seg in segments:
+                seg = seg.strip()
+                if not seg: continue
+                
+                if seg.startswith("[") and seg.endswith("]"):
+                    current_emotion = seg[1:-1].capitalize()
+                    if current_emotion not in emotion_map:
+                        current_emotion = "Normal"
+                    continue
+                
+                # Apply multipliers and jitter
+                e_params = emotion_map.get(current_emotion, emotion_map["Normal"])
+                jitter = random.randint(-2, 2)
+                
+                # Calculate final rate
+                e_rate_val = e_params["rate"]
+                base_rate_val = int(BASE_RATE.replace("%",""))
+                final_rate_val = base_rate_val + e_rate_val + s_mod + jitter
+                final_rate = f"{final_rate_val:+}%"
+                
+                # Pitch
+                final_pitch = e_params["pitch"]
+                
+                # Generate
+                communicate = edge_tts.Communicate(seg, voice, rate=final_rate, pitch=final_pitch)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        combined_audio += chunk["data"]
+                
+            # If expert just spoke for the first time, add a tiny extra delay in processing? 
+            # (In binary concatenation, we can't easily add silence segments without external libs)
+            # But the separation of segments adds a tiny natural 'breath' in most MP3 players.
+            
+        return combined_audio
+
+    try:
+        # Run async in sync context
+        try:
+            loop = asyncio.get_event_loop()
+        except RuntimeError:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+        if loop.is_running():
+            # If we're already in a loop (unlikely in Streamlit threads but possible), 
+            # we need a different approach. For now, we'll try to run in a separate thread.
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                audio_data = pool.submit(lambda: asyncio.run(_amain())).result()
+        else:
+            audio_data = asyncio.run(_amain())
+        
+        if not audio_data:
+            return {"error": "No audio generated from script."}
+
+        audio_base64 = base64.b64encode(audio_data).decode("utf-8")
+        return {"audio_base64": audio_base64}
+        
+    except Exception as e:
+        return {"error": f"Multi-voice audio failed: {str(e)}"}
 
 
 def rag_answer(question: str, chunks: list) -> dict:
@@ -345,3 +510,36 @@ def rag_add_paper(paper_name: str, text: str) -> dict:
     """Add a paper to the RAG library."""
     from utils.rag_utils import add_paper_to_library
     return add_paper_to_library(paper_name, text)
+
+
+def generate_formatted_paper(title: str, text: str) -> dict:
+    """Structure raw research text into high-quality academic sections."""
+    provider = get_llm_provider()
+    prompt = f"""
+    You are an elite academic editor specializing in technical research formatting. 
+    Your mission: Transform the provided raw research text into a highly professional, structured academic paper.
+    
+    1. Title: {title}
+    2. Abstract: A sophisticated, high-density summary of the problem, approach, and key conclusion (150-250 words).
+    3. Keywords: 5 precise, high-impact academic indexing terms.
+    4. Introduction: Compelling context, motivation, and a clear problem statement.
+    5. Literature Review: A synthesized analysis of related concepts and the current state of the art based on the text.
+    6. Methodology: Technical rigour. Describe the methodology, mathematical foundations, or logical steps in extreme detail.
+    7. Results & Discussion: Objective analysis of findings. Highlight novelty and specific data points from the text.
+    8. Conclusion: A definitive summary that maps findings back to the original objectives.
+    9. Future Scope: Strategic directions for expanding this research.
+    10. References: Standardized list of bibliography items extracted or synthesized from the source.
+
+    CRITICAL QUALITY INSTRUCTIONS:
+    - **Tone**: Formal, authoritative, and precise. Avoid casual language.
+    - **Depth**: Do not be superficial. Expand each section to at least 2-3 substantial paragraphs where information is available.
+    - **Integrity**: Do not hallucinate data. If a specific section lacks raw info, bridge the gap with high-level academic motivation or state 'Preliminary investigations under development.'
+    
+    Return your answer as a STATED JSON object with these exact keys:
+    "title", "abstract", "keywords", "introduction", "lit_review", "methodology", "results", "conclusion", "future_scope", "references"
+
+    SOURCE RESEARCH TEXT:
+    {_truncate(text, 15000)}
+    """
+    response_text = provider.generate_content(prompt)
+    return _extract_json(response_text)

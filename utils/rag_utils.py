@@ -46,14 +46,70 @@ def _get_collection():
 
 
 def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> List[str]:
-    """Split text into overlapping chunks."""
-    chunks = []
-    start = 0
-    while start < len(text):
-        end = start + chunk_size
-        chunks.append(text[start:end])
-        start += chunk_size - overlap
-    return [c.strip() for c in chunks if c.strip()]
+    """
+    Split text into chunks using a recursive approach (Semantic-ish).
+    Prioritizes splitting on double newlines (paragraphs), then single newlines, 
+    then spaces, to avoid cutting thoughts in half.
+    """
+    if not text:
+        return []
+        
+    separators = ["\n\n", "\n", " ", ""]
+    final_chunks = []
+    
+    def _recursive_split(current_text: str, sep_idx: int) -> List[str]:
+        if len(current_text) <= chunk_size:
+            return [current_text]
+            
+        if sep_idx >= len(separators):
+            return [current_text[:chunk_size]] # Hard cut if no separators left
+            
+        sep = separators[sep_idx]
+        splits = current_text.split(sep)
+        
+        results = []
+        current_block = ""
+        
+        for s in splits:
+            # If adding this piece exceeds limits
+            if len(current_block) + len(s) + len(sep) > chunk_size:
+                if current_block:
+                    results.append(current_block.strip())
+                # If a single split is already too big, recurse deeper
+                if len(s) > chunk_size:
+                    results.extend(_recursive_split(s, sep_idx + 1))
+                    current_block = ""
+                else:
+                    current_block = s
+            else:
+                current_block = (current_block + sep + s) if current_block else s
+                
+        if current_block:
+            results.append(current_block.strip())
+        return results
+
+    # Run the recursive splitter
+    raw_chunks = _recursive_split(text, 0)
+    
+    # Post-process for overlap and empty strings
+    # (Simple overlap implementation for recursive splitting)
+    # For now, we'll just return the logical blocks to keep semantic meaning high
+    return [c.strip() for c in raw_chunks if c.strip()]
+
+
+def is_paper_indexed(paper_name: str) -> bool:
+    """Check if the paper has already been processed into the library."""
+    try:
+        collection = _get_collection()
+        # Look for at least one chunk with this paper_name metadata
+        results = collection.get(
+            where={"paper_name": paper_name},
+            limit=1,
+            include=[]
+        )
+        return len(results.get("ids", [])) > 0
+    except Exception:
+        return False
 
 
 def add_paper_to_library(paper_name: str, text: str) -> Dict[str, Any]:
@@ -83,10 +139,10 @@ def add_paper_to_library(paper_name: str, text: str) -> Dict[str, Any]:
         return {"status": "error", "error": str(e)}
 
 
-def query_library(question: str, n_results: int = 5) -> List[Dict[str, Any]]:
+def query_library(question: str, n_results: int = 5, paper_name: str = None) -> List[Dict[str, Any]]:
     """
-    Semantic search across all stored papers.
-    Returns list of dicts with 'text', 'paper_name', 'chunk_index', 'distance'.
+    Semantic search across stored papers.
+    If paper_name is provided, it only searches chunks belonging to that paper.
     """
     try:
         collection = _get_collection()
@@ -95,11 +151,17 @@ def query_library(question: str, n_results: int = 5) -> List[Dict[str, Any]]:
             return []
 
         n_results = min(n_results, count)
-        results = collection.query(
-            query_texts=[question],
-            n_results=n_results,
-            include=["documents", "metadatas", "distances"],
-        )
+        
+        query_params = {
+            "query_texts": [question],
+            "n_results": n_results,
+            "include": ["documents", "metadatas", "distances"]
+        }
+        
+        if paper_name:
+            query_params["where"] = {"paper_name": paper_name}
+            
+        results = collection.query(**query_params)
 
         hits = []
         for doc, meta, dist in zip(
