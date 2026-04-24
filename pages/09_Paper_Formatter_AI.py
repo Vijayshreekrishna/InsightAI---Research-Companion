@@ -22,10 +22,10 @@ st.markdown("""
         box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         border: 1px solid #ccc;
         border-radius: 2px;
-        height: 1120px; /* Fixed A4-like height */
+        min-height: 1120px; /* Dynamic A4-like height */
+        height: auto;
         color: #000000 !important;
         transition: all 0.3s ease;
-        overflow: hidden;
         position: relative;
     }
     .paper-sheet h1 { 
@@ -287,13 +287,16 @@ with tab_preview:
                 background: white;
                 color: black;
                 width: 210mm;
-                height: 297mm; /* Fixed A4 height */
+                min-height: 297mm;
+                height: auto;
                 padding: 20mm 25mm;
                 box-shadow: 0 10px 30px rgba(0,0,0,0.15);
                 font-family: {selected_font};
                 font-size: {font_size}pt;
                 line-height: {line_spacing};
                 box-sizing: border-box;
+                overflow: visible;
+                margin-bottom: 50px;
             }}
             .continuous-page h1 {{ text-align: center; margin-bottom: 25px; font-weight: bold; border:none; font-size: 1.8em; color: black !important; }}
             .abstract-box {{ text-align: justify; margin-bottom: 15px; font-style: italic; color: #333; }}
