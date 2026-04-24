@@ -1,8 +1,10 @@
+from utils.ui_components import load_css
 import streamlit as st
 from utils.api import call_api
 from utils.pdf_utils import extract_text_from_pdf
 
 st.title("🧱 Smart Summary")
+load_css("assets/styles.css")
 
 uploaded = st.file_uploader("📄 Upload Research Paper", type=["pdf"])
 

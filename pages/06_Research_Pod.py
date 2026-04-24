@@ -5,6 +5,7 @@ Generates a two-person academic podcast dialogue from a paper, then
 converts it to audio using gTTS.
 """
 
+from utils.ui_components import load_css
 import streamlit as st
 import base64
 import re
@@ -12,6 +13,7 @@ from utils.api import call_api
 from utils.pdf_utils import extract_text_from_pdf
 
 st.title("🎙️ Research Pod")
+load_css("assets/styles.css")
 st.markdown(
     "Transform any research paper into an engaging **two-person academic podcast**."
 )

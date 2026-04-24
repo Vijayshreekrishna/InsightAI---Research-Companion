@@ -1,69 +1,153 @@
 :root {
-  --pp-accent: #2563eb;
-  --pp-accent-soft: #e6f0ff;
+  --pp-accent: #3b82f6; 
+  --pp-accent-glow: rgba(59, 130, 246, 0.4);
+  --pp-dark-bg: #020617; 
+  --pp-glass: rgba(30, 41, 59, 0.7);
+  --pp-glass-border: rgba(255, 255, 255, 0.1);
+  --pp-text-main: #f8fafc;
+  --pp-text-muted: #94a3b8;
 }
 
-.pp-chip {
-  display: inline-block;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--pp-accent-soft);
-  color: #1e3a8a;
-  border: 1px solid #bfdbfe;
-  font-size: 0.85rem;
-  margin: 4px 6px 4px 0;
+/* Global Stable High-Density Scaling */
+html {
+  font-size: 14px !important;
 }
 
-.pp-banner {
-  background: linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%);
-  border: 1px solid #e5e7eb;
-  border-radius: 16px;
-  padding: 18px 22px;
-  margin-bottom: 8px;
+body {
+    background-color: var(--pp-dark-bg);
+    color: var(--pp-text-main);
+    font-family: 'Inter', sans-serif;
 }
 
-.pp-title {
-  font-size: 1.7rem;
-  margin: 0;
-  background: linear-gradient(90deg, #2563eb, #db2777);
-  /* Vibrant Blue to Pink */
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+/* --- Global Component Harmonization --- */
+.stAlert, .stInfo, .stSuccess, .stWarning, [data-testid="stExpander"] {
+    background: var(--pp-glass) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid var(--pp-glass-border) !important;
+    color: var(--pp-text-main) !important;
+    border-radius: 16px !important;
 }
 
-.pp-tagline {
-  color: #4b5563;
+.stButton > button {
+    background: linear-gradient(90deg, #1e3a8a, #3b82f6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    padding: 10px 24px !important;
+    transition: all 0.3s ease !important;
 }
 
-.info-banner {
-  background: white;
-  border-left: 4px solid #2563eb;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-  margin-top: 10px;
-  margin-bottom: 20px;
-  font-size: 0.95rem;
-  color: #374151;
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 0 20px var(--pp-accent-glow) !important;
 }
 
-.info-banner h3 {
-  margin-top: 5px;
-  margin-bottom: 10px;
-  font-size: 1.1rem;
-  color: #1e3a8a;
-  font-weight: 600;
+/* --- Sidebar Style --- */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0f172a 0%, #020617 100%) !important;
+    border-right: 1px solid var(--pp-glass-border);
 }
 
-.info-banner hr {
-    margin: 15px 0;
-    border: 0;
-    border-top: 1px solid #e5e7eb;
+/* --- HERO SECTION (Landing Page Specific) --- */
+.hero-section {
+    padding: 30px 20px; /* Reduced height */
+    text-align: center;
+    background: radial-gradient(circle at center, #1e293b 0%, #020617 70%);
+    border-radius: 20px;
+    margin-bottom: 25px;
+    border: 1px solid var(--pp-glass-border);
 }
 
-.info-banner ul {
-    margin-bottom: 5px;
-    padding-left: 20px;
+.hero-title {
+    font-size: 4rem !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.03em !important;
+    background: linear-gradient(90deg, #60a5fa, #c084fc, #60a5fa);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 4s linear infinite;
+    margin-bottom: 10px !important;
 }
+
+@keyframes shine { to { background-position: 200% center; } }
+
+.hero-subtitle {
+    font-size: 1.4rem;
+    color: var(--pp-text-muted);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* --- VISION PANELS (Narrative Style) --- */
+.vision-panel {
+    background: var(--pp-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--pp-glass-border);
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    transition: all 0.4s ease;
+}
+
+.vision-panel:hover {
+    border-color: var(--pp-accent);
+    box-shadow: 0 0 30px var(--pp-accent-glow);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.panel-icon { font-size: 2.5rem; }
+
+.panel-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.panel-tagline {
+    font-size: 1rem;
+    color: var(--pp-accent);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* --- FEATURE PILLS --- */
+.feature-pill-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.feature-pill {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.feature-pill:hover {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: var(--pp-accent);
+    transform: translateY(-2px);
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #020617; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--pp-accent); }

@@ -209,7 +209,7 @@ def call_api(path: str, payload: dict):
     elif path == "/rag-add":
         return rag_add_paper(payload.get("paper_name", ""), payload.get("text", ""))
     elif path == "/format-paper":
-        return generate_formatted_paper(payload.get("title", ""), payload.get("text", ""))
+        return generate_formatted_paper(payload.get("title", ""), payload.get("text", ""), payload.get("template_name", "Generic University"))
     else:
         return {"error": f"Unknown path: {path}"}
 
@@ -512,30 +512,23 @@ def rag_add_paper(paper_name: str, text: str) -> dict:
     return add_paper_to_library(paper_name, text)
 
 
-def generate_formatted_paper(title: str, text: str) -> dict:
-    """Structure raw research text into high-quality academic sections."""
+def generate_formatted_paper(title: str, text: str, template_name: str = "Generic University") -> dict:
+    """Structure raw research text into high-quality academic sections with template-aware styling."""
     provider = get_llm_provider()
     prompt = f"""
-    You are an elite academic editor specializing in technical research formatting. 
-    Your mission: Transform the provided raw research text into a highly professional, structured academic paper.
+    You are a mechanical academic organizer. Your ONLY task is to take the provided raw research text and sort it into the correct academic sections for the {template_name} template.
     
+    CONSTRAINTS:
     1. Title: {title}
-    2. Abstract: A sophisticated, high-density summary of the problem, approach, and key conclusion (150-250 words).
-    3. Keywords: 5 precise, high-impact academic indexing terms.
-    4. Introduction: Compelling context, motivation, and a clear problem statement.
-    5. Literature Review: A synthesized analysis of related concepts and the current state of the art based on the text.
-    6. Methodology: Technical rigour. Describe the methodology, mathematical foundations, or logical steps in extreme detail.
-    7. Results & Discussion: Objective analysis of findings. Highlight novelty and specific data points from the text.
-    8. Conclusion: A definitive summary that maps findings back to the original objectives.
-    9. Future Scope: Strategic directions for expanding this research.
-    10. References: Standardized list of bibliography items extracted or synthesized from the source.
+    2. Template: {template_name} (Apply the standard citation style for this template, e.g., IEEE uses [1])
 
     CRITICAL QUALITY INSTRUCTIONS:
-    - **Tone**: Formal, authoritative, and precise. Avoid casual language.
-    - **Depth**: Do not be superficial. Expand each section to at least 2-3 substantial paragraphs where information is available.
-    - **Integrity**: Do not hallucinate data. If a specific section lacks raw info, bridge the gap with high-level academic motivation or state 'Preliminary investigations under development.'
+    - **NO RE-WRITING**: This is the absolute priority. Do NOT rephrase, do NOT improve grammar, and do NOT change a single word of the SOURCE RESEARCH TEXT.
+    - **Literal Sorting**: Take the sentences exactly as they are and place them into the appropriate section: Abstract, Keywords, Introduction, Literature Review, Methodology, Results, Conclusion, Future Scope, References.
+    - **No Hallucinations**: Do NOT generate any background info or analysis that is not in the source text.
+    - **No Placeholders**: Do NOT use "{{...}}" or "[Insert here]". 
     
-    Return your answer as a STATED JSON object with these exact keys:
+    Return your answer as a valid JSON object with these exact keys:
     "title", "abstract", "keywords", "introduction", "lit_review", "methodology", "results", "conclusion", "future_scope", "references"
 
     SOURCE RESEARCH TEXT:

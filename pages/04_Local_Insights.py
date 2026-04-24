@@ -5,12 +5,14 @@ Persistent semantic search across all uploaded papers using
 ChromaDB + sentence-transformers. Works entirely offline after setup.
 """
 
+from utils.ui_components import load_css
 import streamlit as st
 from utils.api import call_api
 from utils.pdf_utils import extract_text_from_pdf
 from utils.rag_utils import get_library_stats, delete_paper_from_library
 
 st.title("📚 Local Insights Library")
+load_css("assets/styles.css")
 st.markdown(
     "Build a **persistent semantic library** of research papers. "
     "Ask cross-paper questions and get grounded answers from your entire collection."

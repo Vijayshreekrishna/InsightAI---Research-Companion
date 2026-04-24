@@ -1,8 +1,10 @@
+from utils.ui_components import load_css
 import streamlit as st
 import PyPDF2
 from utils.api import call_api
 
 st.title("⚖️ Compare Two Papers")
+load_css("assets/styles.css")
 st.caption("Upload two research papers and let Gemini analyze how they differ and overlap.")
 
 def extract_text(uploaded_file):

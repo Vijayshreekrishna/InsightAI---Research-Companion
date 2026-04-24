@@ -1,0 +1,25 @@
+[
+    {
+        "title": "Neural Grid - AI Integration in Urban Renewable Systems",
+        "abstract": "This study addresses the challenge of intermittency in urban power grids caused by solar and wind inputs. A Long Short-Term Memory (LSTM) recurrent neural network was deployed across 14 nodes in the North District, trained on 5 years of meteorological data and real-time load consumption. Key findings include a Mean Absolute Percentage Error (MAPE) of 2.1% in peak load prediction, an 18-month extension in lithium-ion battery lifespan, and a 22% reduction in backup diesel generator usage. The system demonstrates the potential for AI integration in urban renewable systems to enhance efficiency and reduce carbon emissions.",
+        "keywords": [
+            "Urban Renewable Systems",
+            "Neural Grid",
+            "AI Integration",
+            "LSTM Recurrent Neural Network",
+            "Intermittency Management"
+        ],
+        "introduction": "Current urban power grids struggle with the intermittency of solar and wind inputs, which can cause voltage instability in local substations. This problem is exacerbated by cloud cover, which can reduce solar output by 60% within 120 seconds.",
+        "lit_review": "Research has shown the importance of addressing renewable intermittency in smart grids (Smith, 2022). Additionally, LSTM networks have been successfully applied in time-series forecasting (Chen et al., 2023), providing a foundation for the methodology used in this study.",
+        "methodology": "A Long Short-Term Memory (LSTM) recurrent neural network was deployed across 14 nodes in the North District. The model was trained on 5 years of meteorological data (humidity, UV index, wind speed) and real-time load consumption. NVIDIA Jetson Orin edge devices were used for local inference to reduce latency to <15ms.",
+        "results": "The AI model achieved a Mean Absolute Percentage Error (MAPE) of 2.1% in peak load prediction, compared to the traditional linear regression baseline of 5.8%. Optimizing charge/discharge cycles based on predicted solar peaks extended the estimated lithium-ion battery lifespan by 18 months. Real-time rerouting of energy reduced backup diesel generator usage by 22% during the 6-month trial period.",
+        "conclusion": "This study demonstrates the potential for AI integration in urban renewable systems to enhance efficiency and reduce carbon emissions. The Neural Grid system achieved significant improvements in peak load prediction, battery lifecycle, and carbon reduction, highlighting its potential for widespread adoption.",
+        "future_scope": "Future research directions may include expanding the system to larger areas, integrating additional renewable energy sources, and addressing limitations related to IoT sensor fidelity and 5G connectivity.",
+        "references": [
+            "Smith, J. (2022). Renewable Intermittency and the Smart Grid. Journal of Energy.",
+            "Chen, L. et al. (2023). LSTM Networks in Time-Series Forecasting. AI Review."
+        ],
+        "id": "20260424_125958",
+        "timestamp": "2026-04-24 12:59"
+    }
+]

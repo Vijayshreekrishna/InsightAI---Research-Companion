@@ -5,6 +5,7 @@ Fetches paper metadata from OpenAlex (free, no key needed) and renders
 an interactive citation network using Pyvis embedded in Streamlit.
 """
 
+from utils.ui_components import load_css
 import streamlit as st
 import json
 import os
@@ -12,6 +13,7 @@ import tempfile
 from utils.citation_utils import search_paper_openalex, get_citation_network, format_authors
 
 st.title("🕸️ Citation Influence Graph")
+load_css("assets/styles.css")
 st.markdown(
     "Explore how a research paper influences and is influenced by others. "
     "Powered by the **OpenAlex API** — completely free, no key required."

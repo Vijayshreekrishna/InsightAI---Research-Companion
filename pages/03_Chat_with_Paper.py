@@ -1,4 +1,5 @@
 # pages/_Chat_with_Paper.py
+from utils.ui_components import load_css
 import streamlit as st
 from utils.api import call_api
 import time
@@ -19,6 +20,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("💬 Chat with Paper")
+load_css("assets/styles.css")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []

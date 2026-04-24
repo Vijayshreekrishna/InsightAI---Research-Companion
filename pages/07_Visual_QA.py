@@ -4,12 +4,14 @@ Module 5.1 – Visual Q&A (Page Inspector)
 Extract and analyse specific PDF pages using Groq + pdfplumber.
 """
 
+from utils.ui_components import load_css
 import streamlit as st
 import io
 from utils.api import call_api
 from utils.vision_utils import extract_page_content, render_page_preview, get_page_count
 
 st.title("🔬 Visual Q&A – Page Inspector")
+load_css("assets/styles.css")
 st.markdown(
     "Upload a research PDF, select a page, and ask questions about its content — "
     "including tables, figures, and data."
@@ -59,8 +61,11 @@ if uploaded:
             st.error(page_data["error"])
             st.stop()
 
-        with st.expander("Raw Text", expanded=False):
-            st.text(page_data.get("text", "No text found on this page."))
+        # --- Text Vault (Scrollable Window) ---
+        txt = page_data.get("text", "No text found on this page.")
+        st.markdown(f"""
+        <div style="height: 300px; overflow-y: scroll; overflow-x: auto; background: #0f172a; padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; font-family: 'JetBrains Mono', 'Courier New', monospace; white-space: pre; color: #e2e8f0; line-height: 1.5;">{txt}</div>
+        """, unsafe_allow_html=True)
 
         if page_data.get("tables"):
             with st.expander(f"📊 Tables ({len(page_data['tables'])} found)", expanded=True):

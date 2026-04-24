@@ -7,7 +7,7 @@ import io
 
 # Page configuration
 st.set_page_config(
-    page_title="Insight-AI - Your AI Research Companion",
+    page_title="Insight-AI | The Last Research Tool You'll Ever Need",
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -16,45 +16,96 @@ st.set_page_config(
 # Load CSS
 load_css("assets/styles.css")
 
-# Title Banner
-title_banner()
-
 # Sidebar
-st.sidebar.title("Insight-AI")
-st.sidebar.caption("Your AI Research Companion")
+with st.sidebar:
+    st.markdown("### 🗂️ Active Command Centers")
+    st.markdown("- 🧠 **The Synthesizer** (Summary/Compare)")
+    st.markdown("- 👁️ **The Oracle** (Chat/Visual Q&A)")
+    st.markdown("- 📢 **The Broadcaster** (Audio/Drafting)")
+    st.divider()
+    if st.button("🔁 Clear Neural Cache", use_container_width=True):
+        st.session_state.messages = []
+        st.toast("System cache cleared.")
 
-if st.sidebar.button("🔁 Reset Chat"):
-    st.session_state.messages = []
-    st.toast("Chat reset", icon="✅")
+# --- HERO SECTION ---
+st.markdown("""
+<div class="hero-section">
+    <div class="hero-title">INSIGHT-AI</div>
+    <div style="font-size: 1.3rem; color: #94a3b8; font-weight: 500;">
+        Welcome to <strong>Insight-AI</strong> 👋 — head to the tabs to begin.
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**📖 Core Features**")
-st.sidebar.markdown("- 🧱 **Smart Summary** — Summarize & extract insights")
-st.sidebar.markdown("- 💬 **Chat with Paper** — Q&A with RAG history")
-st.sidebar.markdown("- 📊 **Compare Two Papers** — Side-by-side analysis")
-st.sidebar.markdown("- 💡 **Insights & Future Work** — Trends & directions")
-st.sidebar.markdown("---")
-st.sidebar.markdown("**🆕 Advanced Modules**")
-st.sidebar.markdown("- 🔬 **Visual Q&A** — Interrogate specific PDF pages")
-st.sidebar.markdown("- 🎙️ **Research Pod** — Podcast-style audio summaries")
-st.sidebar.markdown("- 📚 **Local Insights** — Semantic RAG library")
-st.sidebar.markdown("- 🕸️ **Citation Graph** — Citation influence network")
-st.sidebar.markdown("- 📝 **Paper Formatter AI** — Format research drafts")
-st.sidebar.markdown("---")
+# --- NARRATIVE PANELS ---
 
+# 1. THE SYNTHESIZER
+st.markdown("""
+<div class="vision-panel">
+    <div class="panel-header">
+        <div class="panel-icon">🧠</div>
+        <div>
+            <div class="panel-title">The Synthesizer</div>
+        </div>
+    </div>
+    <p style="color:#94a3b8; font-size:1.1rem; margin-bottom:20px;">
+        Transform massive PDFs into high-density insights. Our synthesis engine extracts methodology, datasets, and future work in seconds.
+    </p>
+    <div class="feature-pill-grid">
+        <div class="feature-pill">🧱 Smart Summary</div>
+        <div class="feature-pill">📊 Compare Two Papers</div>
+        <div class="feature-pill">💡 Future Directions</div>
+        <div class="feature-pill">📚 Semantic Library</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown("Welcome to **Insight-AI** 👋 — head to the tabs to begin.")
+# 2. THE ORACLE
+st.markdown("""
+<div class="vision-panel">
+    <div class="panel-header">
+        <div class="panel-icon">👁️</div>
+        <div>
+            <div class="panel-title">The Oracle</div>
+        </div>
+    </div>
+    <p style="color:#94a3b8; font-size:1.1rem; margin-bottom:20px;">
+        Interrogate the document. Ask complex questions, map citation networks, and perform visual Q&A on charts and tables.
+    </p>
+    <div class="feature-pill-grid">
+        <div class="feature-pill">💬 Deep Chat (True RAG)</div>
+        <div class="feature-pill">🔬 Visual PDF Interrogation</div>
+        <div class="feature-pill">🕸️ Citation Graph Mapping</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# 3. THE BROADCASTER
+st.markdown("""
+<div class="vision-panel">
+    <div class="panel-header">
+        <div class="panel-icon">📢</div>
+        <div>
+            <div class="panel-title">The Broadcaster</div>
+        </div>
+    </div>
+    <p style="color:#94a3b8; font-size:1.1rem; margin-bottom:20px;">
+        Turn your research into its final form. Automatically generate professional podcasts or format your messy notes into academic drafts.
+    </p>
+    <div class="feature-pill-grid">
+        <div class="feature-pill">🎙️ Two-Person Research Pod</div>
+        <div class="feature-pill">📝 Paper Formatter (IEEE/ACM)</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("""
-<div class="info-banner">
-    <h3>ℹ️ About & Verification Rules</h3>
-    <p>Insight-AI is your research companion. We <strong>summarize</strong>, <strong>chat</strong>, and <strong>discover</strong> insights.</p>
-    <hr>
-    <ul>
-        <li><strong>No Hallucinations:</strong> Strictly grounded in provided PDF.</li>
-        <li><strong>Citations:</strong> All claims backed by page references (e.g. <code>[Page 3]</code>).</li>
-        <li><strong>Transparency:</strong> We tell you if the info isn't there.</li>
-        <li><strong>RAG Memory:</strong> Chat with Paper automatically searches your historical library.</li>
-    </ul>
+<div class="protocol-banner">
+    <h3 style="color:#ffffff; margin-bottom:10px;">🛡️ The InsightAI Protocol</h3>
+    <div style="display:flex; justify-content:center; gap:30px; color:#94a3b8;">
+        <span>✅ No Hallucinations</span>
+        <span>✅ Page-Verified Citations</span>
+        <span>✅ Mechanical Fidelity</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
