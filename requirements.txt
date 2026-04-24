@@ -8,6 +8,7 @@ openai
 PyPDF2
 pyvis
 gTTS
+huggingface_hub
 numpy
 pandas
 matplotlib
@@ -18,3 +19,4 @@ lxml
 beautifulsoup4
 requests
 aiohttp
+pyarrow
