@@ -30,7 +30,10 @@ if paper_a and paper_b:
             payload = {"text_a": text_a, "text_b": text_b}
             comparison = call_api("/compare", payload)
 
-        if comparison.get("differences") or comparison.get("similarities"):
+        if comparison.get("is_raw"):
+            st.info("💡 Note: The AI provided a narrative comparison report.")
+            st.markdown(f'<div class="vision-panel">{comparison.get("tldr", "")}</div>', unsafe_allow_html=True)
+        elif comparison.get("differences") or comparison.get("similarities"):
             st.success("✅ Comparison complete!")
 
             if "summary" in comparison:

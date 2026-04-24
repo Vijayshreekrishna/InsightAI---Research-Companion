@@ -26,26 +26,21 @@ def summarize_paper(text: str):
     """Use configured LLM to summarize research paper text into sections."""
     provider = get_llm_provider()
     prompt = f"""
-    You are an expert academic researcher. Provide a comprehensive, high-detail summary of this research paper.
+    You are a professional academic summarizer. Analyze the provided research paper and generate a high-detail summary.
+
+    OUTPUT FORMAT:
+    You MUST return ONLY a valid JSON object. Do not include any introductory text, markdown headings, or conversational filler.
     
-    CRITICAL INSTRUCTIONS:
-    1. **Be Comprehensive**: Do not be brief. Expand on every point to provide depth. 
-    2. **Include Data**: You MUST include specific quantitative results, metrics, and exact figures from the paper.
-    3. **Methodology Depth**: Describe the steps, architecture, and mathematical models in detail.
-    4. **Strict Citations**: Cite the page number for every specific claim or figure using [Page X].
-    5. **Source Only**: Use ONLY the provided text.
+    JSON Keys:
+    - "tldr": A thorough single paragraph summary of the paper's essence.
+    - "abstract": Breakdown of the core problem, existing gaps, and proposed solution.
+    - "methodology": Technical dive into architecture, datasets, and mathematical models.
+    - "results": Quantitative findings, metrics, and performance comparisons.
+    - "limitations": Constraints, biases, and future research directions.
 
-    Sections to Generate:
-    - TL;DR Summary (A thorough paragraph, not just one sentence)
-    - Abstract Summary (Detailed breakdown of the core problem and solution)
-    - Methodology Overview (Deep dive into the technical approach, architecture, and algorithms)
-    - Results & Findings (Comprehensive list of all key metrics, comparisons, and performance numbers)
-    - Limitations (Detailed analysis of constraints and future work mentioned)
+    CRITICAL: Page numbers MUST be cited for all claims using [Page X].
 
-    Return your answer as structured JSON with keys:
-    tldr, abstract, methodology, results, limitations.
-
-    Research Paper Text:
+    Paper Text:
     {_truncate(text, 15000)}
     """
     response_text = provider.generate_content(prompt)
@@ -115,18 +110,17 @@ def extract_insights(text: str):
     """Extract keywords, datasets, and algorithms from the paper."""
     provider = get_llm_provider()
     prompt = f"""
-    From this research paper text, extract the following:
-    - Top 5 keywords
-    - Datasets used
-    - Algorithms mentioned
-
-    IMPORTANT: Cite the page number where each dataset/algorithm is found, e.g. "ResNet-50 [Page 3]".
-
-    Return a valid JSON object with specific lowercase keys: "keywords", "datasets", "algorithms".
-    Each key must map to a list of strings.
-    Example: {{ "keywords": ["AI"], "datasets": ["MNIST"], "algorithms": ["CNN"] }}
+    Analyze this research paper and extract specific metadata.
     
-    Text:
+    OUTPUT FORMAT:
+    Return ONLY a valid JSON object. No preamble, no markdown.
+    
+    JSON Keys:
+    - "keywords": List of top 5 keywords.
+    - "datasets": List of datasets used (with [Page X] citations).
+    - "algorithms": List of algorithms mentioned (with [Page X] citations).
+
+    Paper Text:
     {_truncate(text, 10000)}
     """
     response_text = provider.generate_content(prompt)
@@ -148,10 +142,11 @@ def future_research_ideas(text: str):
     """Suggest possible future research directions."""
     provider = get_llm_provider()
     prompt = f"""
-    Based on this paper, suggest 3-5 possible future research directions or open problems.
+    Analyze this paper and suggest 3-5 high-potential future research directions.
     
-    Return a structured JSON with a single key "suggestions", which is a list of strings.
-    Example: {{ "suggestions": ["Idea 1", "Idea 2", "Idea 3"] }}
+    OUTPUT FORMAT:
+    Return ONLY a valid JSON object with key "suggestions" (list of strings).
+    No conversational filler.
 
     Research Paper Text:
     {_truncate(text, 8000)}
@@ -218,19 +213,29 @@ def call_api(path: str, payload: dict):
 # Helper: Extract JSON safely
 # -----------------------------
 def _extract_json(response_text: str):
-    """Extract and safely parse JSON from model output."""
+    """Extract and safely parse JSON from model output with aggressive cleanup."""
     try:
-        # cleanup code blocks if present
-        cleaned_text = re.sub(r'```json\s*', '', response_text)
-        cleaned_text = re.sub(r'```', '', cleaned_text)
+        # 1. Clean up markdown code blocks
+        text = re.sub(r'```json\s*', '', response_text)
+        text = re.sub(r'```', '', text).strip()
         
-        json_match = re.search(r'\{.*\}', cleaned_text, re.DOTALL)
+        # 2. Try to find the main JSON block { ... }
+        json_match = re.search(r'(\{.*\})', text, re.DOTALL)
         if json_match:
-            return json.loads(json_match.group(0))
-        return json.loads(cleaned_text) # Attempt direct load
+            try:
+                return json.loads(json_match.group(1))
+            except json.JSONDecodeError:
+                pass # Try alternative cleanup
+
+        # 3. Last ditch: try direct load
+        return json.loads(text)
     except Exception:
-        # fallback heuristic if model doesn't return proper JSON
-        return {"raw_response": response_text}
+        # 4. Fallback: If it's just raw text, wrap it so the UI can still show it
+        return {
+            "tldr": response_text,
+            "abstract": "The AI provided a non-structured response. See TL;DR for full text.",
+            "is_raw": True
+        }
 
 
 def generate_tts(text: str):
@@ -265,12 +270,10 @@ def compare_papers(text_a: str, text_b: str):
         prompt = f"""
         You are an academic comparison assistant.
 
-        Compare these two research papers and provide:
-        1. 3–5 key differences between them
-        2. 3–5 key similarities
-        3. A short summary paragraph highlighting which paper offers stronger contributions or novelty
+        OUTPUT FORMAT:
+        Return ONLY a valid JSON object. No preamble, no markdown.
 
-        Format your response as JSON with keys:
+        JSON Keys:
         - "differences": [list of strings]
         - "similarities": [list of strings]
         - "summary": "string"
@@ -296,12 +299,8 @@ def visual_qa(page_content: str, question: str) -> dict:
     prompt = f"""
 You are an expert at interpreting research paper content including tables, figures, and data.
 
-A user is viewing a specific page from a research PDF. Below is the structured content extracted 
-from that page (text + any tables). Answer their question ONLY based on this page content.
-
-If the page contains a table, interpret it carefully and explain the values.
-If a figure is mentioned in the text, describe what it likely represents.
-If the answer is not present on this page, say so clearly.
+OUTPUT FORMAT:
+Return ONLY a valid JSON object with key "answer" (string). No preamble.
 
 Page Content:
 {_truncate(page_content, 6000)}
@@ -309,7 +308,7 @@ Page Content:
 User Question: {question}
 """
     response_text = provider.generate_content(prompt)
-    return {"answer": response_text}
+    return _extract_json(response_text)
 
 
 def generate_podcast_script(text: str, host_name: str = "Jamie", expert_name: str = "Dr. Aisha") -> dict:
@@ -521,24 +520,19 @@ def rag_add_paper(paper_name: str, text: str) -> dict:
 
 
 def generate_formatted_paper(title: str, text: str, template_name: str = "Generic University") -> dict:
-    """Structure raw research text into high-quality academic sections with template-aware styling."""
+    """Structure raw research text into high-quality academic sections."""
     provider = get_llm_provider()
     prompt = f"""
-    You are a mechanical academic organizer. Your ONLY task is to take the provided raw research text and sort it into the correct academic sections for the {template_name} template.
+    Task: Organize raw research text into academic sections for the {template_name} template.
     
-    CONSTRAINTS:
-    1. Title: {title}
-    2. Template: {template_name} (Apply the standard citation style for this template, e.g., IEEE uses [1])
+    OUTPUT FORMAT:
+    Return ONLY a valid JSON object. No conversational filler.
+    JSON Keys: "title", "abstract", "keywords", "introduction", "lit_review", "methodology", "results", "conclusion", "future_scope", "references"
 
-    CRITICAL QUALITY INSTRUCTIONS:
-    - **NO RE-WRITING**: This is the absolute priority. Do NOT rephrase, do NOT improve grammar, and do NOT change a single word of the SOURCE RESEARCH TEXT.
-    - **Literal Sorting**: Take the sentences exactly as they are and place them into the appropriate section: Abstract, Keywords, Introduction, Literature Review, Methodology, Results, Conclusion, Future Scope, References.
-    - **No Hallucinations**: Do NOT generate any background info or analysis that is not in the source text.
-    - **No Placeholders**: Do NOT use "{{...}}" or "[Insert here]". 
+    RULES:
+    - NO RE-WRITING: Use source sentences exactly as they are.
+    - NO HALLUCINATIONS: Use ONLY the provided text.
     
-    Return your answer as a valid JSON object with these exact keys:
-    "title", "abstract", "keywords", "introduction", "lit_review", "methodology", "results", "conclusion", "future_scope", "references"
-
     SOURCE RESEARCH TEXT:
     {_truncate(text, 15000)}
     """

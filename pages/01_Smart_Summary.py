@@ -52,13 +52,18 @@ if uploaded:
 if "summary" in st.session_state and st.session_state.summary:
     s = st.session_state.summary
     st.markdown("#### 🧠 AI Summary")
-    with st.expander("TL;DR Summary", expanded=True):
-        st.write(s.get("tldr", ""))
-    with st.expander("Abstract Summary"):
-        st.write(s.get("abstract", ""))
-    with st.expander("Methodology Overview"):
-        st.write(s.get("methodology", ""))
-    with st.expander("Results & Findings"):
-        st.write(s.get("results", ""))
-    with st.expander("Limitations"):
-        st.write(s.get("limitations", ""))
+    
+    if s.get("is_raw"):
+        st.info("💡 Note: The AI provided a detailed report in narrative format.")
+        st.markdown(f'<div class="vision-panel">{s.get("tldr", "")}</div>', unsafe_allow_html=True)
+    else:
+        with st.expander("TL;DR Summary", expanded=True):
+            st.write(s.get("tldr", ""))
+        with st.expander("Abstract Summary"):
+            st.write(s.get("abstract", ""))
+        with st.expander("Methodology Overview"):
+            st.write(s.get("methodology", ""))
+        with st.expander("Results & Findings"):
+            st.write(s.get("results", ""))
+        with st.expander("Limitations"):
+            st.write(s.get("limitations", ""))

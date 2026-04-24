@@ -12,34 +12,29 @@ else:
     ins = st.session_state.insights
     st.markdown("#### 🧩 Insights")
     
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown("**🔑 Keywords**")
-        keywords = ins.get("keywords", [])
-        if keywords:
-            for kw in keywords:
-                st.info(kw)
-        else:
-            st.caption("No keywords found.")
-            
-    with col2:
-        st.markdown("**💾 Datasets**")
-        datasets = ins.get("datasets", [])
-        if datasets:
-            for ds in datasets:
-                st.success(ds)
-        else:
-            st.caption("No datasets extracted.")
-            
-    with col3:
-        st.markdown("**⚙️ Algorithms**")
-        algorithms = ins.get("algorithms", [])
-        if algorithms:
-            for al in algorithms:
-                st.warning(al)
-        else:
-            st.caption("No algorithms extracted.")
+    if ins.get("is_raw"):
+        st.info("💡 Note: The AI provided a narrative report for insights.")
+        st.markdown(f'<div class="vision-panel">{ins.get("tldr", "")}</div>', unsafe_allow_html=True)
+    else:
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown("**🔑 Keywords**")
+            keywords = ins.get("keywords", [])
+            if keywords:
+                for kw in keywords: st.info(kw)
+            else: st.caption("No keywords found.")
+        with col2:
+            st.markdown("**💾 Datasets**")
+            datasets = ins.get("datasets", [])
+            if datasets:
+                for ds in datasets: st.success(ds)
+            else: st.caption("No datasets extracted.")
+        with col3:
+            st.markdown("**⚙️ Algorithms**")
+            algorithms = ins.get("algorithms", [])
+            if algorithms:
+                for al in algorithms: st.warning(al)
+            else: st.caption("No algorithms extracted.")
 
 eli15 = st.toggle("🧒 Explain Like I'm 15")
 if eli15 and "summary" in st.session_state:
