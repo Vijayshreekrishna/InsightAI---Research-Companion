@@ -1,6 +1,6 @@
 # 🧠 Insight-AI: The Sovereign Research Workstation
 
-**Insight-AI** is a high-fidelity, agentic research ecosystem designed for the modern academic. It deconstructs complex papers, automates professional podcast production, and streamlines scholarly formatting through a cinematic, glassmorphic interface.
+**Insight-AI is a next-generation academic ecosystem designed to transform the research lifecycle. Featuring a cinematic, glassmorphic interface, it utilizes specialized agents for deep paper deconstruction, cross-library RAG interrogation, and professional-grade podcast transmutation. Built with a 'Ghost Key' security model and a real-time Neural Brain Selector, it offers researchers total sovereignty over their AI workflows
 
 ---
 
