@@ -403,13 +403,21 @@ def generate_podcast_audio(
             if not line: continue
             
             is_expert = False
-            if line.startswith(f"{host_name}:"):
+            if f"{host_name}:" in line:
                 voice = HOST_VOICE
-                content = line[len(host_name)+1:].strip()
+                content = line.split(f"{host_name}:", 1)[1].strip()
+                # Also check if there was an emotion tag BEFORE the name
+                pre_text = line.split(f"{host_name}:", 1)[0].strip()
+                if "[" in pre_text and "]" in pre_text:
+                    content = pre_text + " " + content
                 s_mod, p_mod = host_speed_mod, host_pitch_mod
-            elif line.startswith(f"{expert_name}:"):
+            elif f"{expert_name}:" in line:
                 voice = EXPERT_VOICE
-                content = line[len(expert_name)+1:].strip()
+                content = line.split(f"{expert_name}:", 1)[1].strip()
+                # Also check if there was an emotion tag BEFORE the name
+                pre_text = line.split(f"{expert_name}:", 1)[0].strip()
+                if "[" in pre_text and "]" in pre_text:
+                    content = pre_text + " " + content
                 is_expert = True
                 s_mod, p_mod = expert_speed_mod, expert_pitch_mod
             else:

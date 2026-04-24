@@ -1,82 +1,47 @@
-# Insight-AI – Research Companion
+# 🧠 Insight-AI: The Sovereign Research Workstation
 
-**Insight-AI** is a powerful research assistant designed to help students, researchers, and professionals analyze academic papers efficiently. By leveraging advanced Large Language Models (LLMs), it provides simplified summaries, deep comparisons, and actionable future research directions.
+**Insight-AI** is a high-fidelity, agentic research ecosystem designed for the modern academic. It deconstructs complex papers, automates professional podcast production, and streamlines scholarly formatting through a cinematic, glassmorphic interface.
 
-## 📖 Features
+---
 
-### Core Modules
-- **🧱 Smart Summary**: Generate comprehensive summaries with TL;DR, methodology, and key results. Includes built-in **Voice Summary** for quick listening.
-- **💬 Chat with Paper**: Ask questions and get answers grounded strictly in the paper’s text with citations and **RAG History** integration.
-- **🆚 Compare Papers**: Upload two papers to see side-by-side differences, similarities, and relative strengths.
-- **🔍 Insights & Future Work**: Extract core algorithms, datasets, and keywords, and generate AI-driven suggestions for future research.
+## 🚀 Key Innovation: Neural Brain Configuration
+Insight-AI features a **Real-Time Neural Engine**. Users can switch between multiple "Brains" (Llama 3.3, Llama 3.1, Mixtral, Gemini) instantly via the sidebar to optimize for speed, intelligence, or API quota management.
 
-### Advanced Modules
-- **🔬 Visual Q&A**: Select specific PDF pages to analyze tables, figures, and data using visionary extraction (pdfplumber + Groq).
-- **🎙️ Research Pod**: Transform papers into engaging two-person academic podcasts with AI-generated dialogue and audio (gTTS).
-- **📚 Local Insights**: Build a persistent semantic library (ChromaDB) to search and query across all your uploaded research papers.
-- **🕸️ Citation Graph**: Explore interactive citation networks and paper influence powered by OpenAlex and Pyvis.
+## 🤖 Multi-Agent Orchestration
+Insight-AI utilizes a specialized multi-agent architecture where distinct AI personas handle different stages of the research lifecycle:
+*   **The Synthesizer**: Optimized for technical data mining and citation-accurate deconstruction.
+*   **The Oracle**: A RAG-specialized retriever that maintains "long-term memory" across your academic library.
+*   **The Broadcaster**: A creative-technical hybrid that handles conversational transmutation (Podcast) and structural formatting.
+*   **The Visual Analyst**: Specialized in interpreting spatial data, tables, and figure relationships within PDFs.
 
-## 📁 Project Structure
+### 🛡️ Ghost Key Security & BYOK
+*   **Invisible Defaults**: Guests use the platform via the system's hidden API keys without ever seeing them.
+*   **Universal Key Vault**: Power users can "Bring Their Own Key" (BYOK) for OpenAI, Groq, Gemini, or HuggingFace to bypass system limits.
+*   **Encrypted Persistence**: Personal keys can be saved permanently to the local device, surviving refreshes and restarts.
 
-```
-Insight-AI/
-├── app.py                      # Main Streamlit application entry point
-├── requirements.txt            # Python dependencies
-├── assets/                     # UI assets (CSS, images)
-│   └── styles.css
-├── pages/                      # Application pages
-│   ├── _Chat_with_Paper.py
-│   ├── _Citation_Graph.py
-│   ├── _Compare_Two_Papers.py
-│   ├── _Insights_&_Future_Work.py
-│   ├── _Local_Insights.py
-│   ├── _Research_Pod.py
-│   ├── _Smart_Summary.py
-│   └── _Visual_QA.py
-├── utils/                      # Core logic and utilities
-│   ├── api.py                  # Main API dispatcher and prompt logic
-│   ├── citation_utils.py       # OpenAlex and Pyvis network logic
-│   ├── gemini_api.py           # Gemini wrapper
-│   ├── llm_factory.py          # Multi-provider LLM factory (Gemini, Groq, HF, OpenAI)
-│   ├── pdf_utils.py            # PDF text extraction
-│   ├── rag_utils.py            # ChromaDB and Semantic Search
-│   ├── ui_components.py        # Shared UI elements
-│   └── vision_utils.py         # Page rendering and table extraction
-└── .env                        # Configuration (API keys)
-```
+---
 
-## ⚙️ Setup
+## 🛠️ The Three Command Centers
 
-1. **Clone the repository:**
-   ```powershell
-   git clone https://github.com/Vijayshreekrishna/InsightAI---Research-Companion.git
-   cd InsightAI---Research-Companion
-   ```
+### 1. 🧠 The Synthesizer (Synthesis & Comparison)
+*   **Smart Summary**: Multi-layered deconstruction with precise page-level citations.
+*   **Paper Comparison**: Side-by-side technical analysis of dual research works.
+*   **Insights Engine**: Automated extraction of keywords, datasets, and mathematical algorithms.
 
-2. **Create a virtual environment:**
-   ```powershell
-   python -m venv venv
-   .\venv\Scripts\activate
-   ```
+### 2. 👁️ The Oracle (Interrogation & Retrieval)
+*   **Visual Q&A**: Interrogate specific pages, tables, and figures with a dedicated **"Text Vault"** scrollable window.
+*   **Chat with Paper**: Context-aware RAG across your entire historical research library.
+*   **Library Management**: Organize and search your personal knowledge base in real-time.
 
-3. **Install dependencies:**
-   ```powershell
-   pip install -r requirements.txt
-   ```
+### 3. 📢 The Broadcaster (Transmutation & Output)
+*   **Research Pod**: Transform papers into high-fidelity, two-person academic podcasts with "Deep Realism" prosody and emotional tagging.
+*   **Paper Formatter AI**: Structure raw research into professional IEEE/Academic templates with a persistent **Academic Draft Library**.
 
-4. **Configure Environment:**
-   Create a `.env` file in the root directory and add your API keys:
-   ```env
-   GEMINI_API_KEY=your_key_here
-   GROQ_API_KEY=your_key_here
-   OPENAI_API_KEY=your_key_here
-   HF_TOKEN=your_token_here
-   ```
+---
 
-## 🚀 Usage
+## 📦 Installation & Deployment
+1.  **Install Dependencies**: `pip install -r requirements.txt`
+2.  **Configure Environment**: Set your `GROQ_API_KEY` in a `.env` file.
+3.  **Launch**: `streamlit run app.py`
 
-Run the local server:
-```powershell
-streamlit run app.py
-```
-Open [http://localhost:8501](http://localhost:8501) in your browser.
+*Built for the next generation of academic pioneers.*

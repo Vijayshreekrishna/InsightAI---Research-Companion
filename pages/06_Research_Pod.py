@@ -41,30 +41,39 @@ with st.sidebar:
 
 st.markdown("---")
 
-# ── Paper Source ──────────────────────────────────────────────────────────────
+# ── Paper Source Selector ──────────────────────────────────────────────────────
+st.markdown('<div class="vision-panel">', unsafe_allow_html=True)
+source_mode = st.radio(
+    "🎯 Select Paper Source for Podcast",
+    ["Use Main Session Paper", "Upload New Paper for this Pod"],
+    horizontal=True,
+    help="Choose whether to use the paper from your main session or upload a different one."
+)
+
 paper_text = None
 paper_name = None
 
-if st.session_state.get("paper_text"):
-    st.success(
-        f"✅ Using paper already loaded: **{st.session_state.get('paper_name', 'Uploaded Paper')}**"
-    )
-    use_existing = st.checkbox("Use this paper for the podcast", value=True)
-    if use_existing:
+if source_mode == "Use Main Session Paper":
+    if st.session_state.get("paper_text"):
         paper_text = st.session_state.paper_text
-        paper_name = st.session_state.get("paper_name", "paper.pdf")
-
-if not paper_text:
-    uploaded = st.file_uploader(
-        "📄 Upload a Research Paper (or use the one already loaded above)",
-        type=["pdf"],
-        key="pod_upload"
-    )
+        paper_name = st.session_state.get("paper_name", "Session Paper")
+        st.success(f"🔗 Linked to main paper: **{paper_name}**")
+    else:
+        st.warning("⚠️ No paper found in main session. Please upload one below.")
+        uploaded = st.file_uploader("📄 Upload Paper", type=["pdf"], key="pod_fallback_upload")
+        if uploaded:
+            with st.spinner("Extracting text..."):
+                paper_text = extract_text_from_pdf(uploaded)
+                paper_name = uploaded.name
+else:
+    uploaded = st.file_uploader("📄 Upload Specific Paper for Pod", type=["pdf"], key="pod_fresh_upload")
     if uploaded:
-        with st.spinner("Reading paper..."):
+        with st.spinner("Extracting text..."):
             paper_text = extract_text_from_pdf(uploaded)
-        paper_name = uploaded.name
-        st.success(f"✅ Loaded **{paper_name}**")
+            paper_name = uploaded.name
+        st.success(f"✅ Loaded specific paper: **{paper_name}**")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Generate Podcast Script ────────────────────────────────────────────────────
 if paper_text:

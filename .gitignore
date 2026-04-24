@@ -1,4 +1,24 @@
-venv/
+# Environment Variables
 .env
+
+# User Persistence
+.user_keys.json
+.user_keys_backup.json
+user_library/
+
+# Python / IDE
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+venv/
+.venv/
+.env/
+.vscode/
+.idea/
+
+# Streamlit
+.streamlit/config.toml.bak
+
+# OS
+.DS_Store
+Thumbs.db
