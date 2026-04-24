@@ -26,25 +26,62 @@ def summarize_paper(text: str):
     """Use configured LLM to summarize research paper text into sections."""
     provider = get_llm_provider()
     prompt = f"""
-    You are a professional academic summarizer. Analyze the provided research paper and generate a high-detail summary.
+    [TASK] Generate a high-detail research summary in PURE JSON.
+    [CRITICAL] DO NOT include headings, introductory text, or markdown.
+    [CRITICAL] Use ONLY the following JSON structure:
+    {{
+      "tldr": "A thorough single paragraph summary...",
+      "abstract": "Core problem and solution breakdown...",
+      "methodology": "Technical dive into architecture and models...",
+      "results": "Quantitative findings and metrics...",
+      "limitations": "Constraints and future directions..."
+    }}
 
-    OUTPUT FORMAT:
-    You MUST return ONLY a valid JSON object. Do not include any introductory text, markdown headings, or conversational filler.
-    
-    JSON Keys:
-    - "tldr": A thorough single paragraph summary of the paper's essence.
-    - "abstract": Breakdown of the core problem, existing gaps, and proposed solution.
-    - "methodology": Technical dive into architecture, datasets, and mathematical models.
-    - "results": Quantitative findings, metrics, and performance comparisons.
-    - "limitations": Constraints, biases, and future research directions.
-
-    CRITICAL: Page numbers MUST be cited for all claims using [Page X].
-
-    Paper Text:
+    [DATA SOURCE]
     {_truncate(text, 15000)}
     """
     response_text = provider.generate_content(prompt)
     return _extract_json(response_text)
+
+def _extract_json(response_text: str):
+    """Aggressively mine JSON data from LLM responses."""
+    try:
+        # 1. Clean up markdown
+        text = re.sub(r'```json\s*', '', response_text)
+        text = re.sub(r'```', '', text).strip()
+        
+        # 2. Try direct JSON parse
+        json_match = re.search(r'(\{.*\})', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group(1))
+            except: pass
+
+        # 3. Key Miner Fallback: Manual regex extraction for individual keys
+        keys = ["tldr", "abstract", "methodology", "results", "limitations", "keywords", "datasets", "algorithms", "suggestions", "answer", "differences", "similarities", "summary"]
+        mined_data = {}
+        for key in keys:
+            # Look for "key": "value" patterns
+            pattern = rf'"{key}"\s*:\s*"(.*?)"(?="\s*,\s*"|"\s*}})'
+            match = re.search(pattern, text, re.DOTALL)
+            if match:
+                mined_data[key] = match.group(1).replace('\\n', '\n').strip()
+            else:
+                # Try unquoted or simpler patterns
+                pattern_simple = rf'"{key}"\s*:\s*(.*)'
+                match_simple = re.search(pattern_simple, text)
+                if match_simple:
+                    val = match_simple.group(1).strip().strip(',').strip('}').strip('"')
+                    mined_data[key] = val
+
+        if mined_data:
+            return mined_data
+
+        # 4. Final Fallback: Return raw text wrapped in tldr
+        return {"tldr": response_text, "is_raw": True}
+    except Exception:
+        return {"tldr": response_text, "is_raw": True}
+
 
 
 from typing import Optional
