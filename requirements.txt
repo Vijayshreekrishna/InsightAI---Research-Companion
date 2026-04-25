@@ -24,5 +24,3 @@ beautifulsoup4
 requests
 aiohttp
 pyarrow
-chromadb
-sentence-transformers
