@@ -24,3 +24,6 @@ beautifulsoup4
 requests
 aiohttp
 pyarrow
+chromadb
+sentence-transformers
+pysqlite3-binary

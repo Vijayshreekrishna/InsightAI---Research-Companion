@@ -10,6 +10,14 @@ import re
 from typing import List, Dict, Any
 import streamlit as st
 
+# Streamlit Cloud SQLite workaround for ChromaDB
+try:
+    __import__('pysqlite3')
+    import sys
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+except ImportError:
+    pass
+
 # Make LIBRARY_PATH absolute relative to the project root
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIBRARY_PATH = os.path.join(BASE_DIR, "insights_library")
