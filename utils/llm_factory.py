@@ -121,13 +121,34 @@ def get_llm_provider() -> LLMProvider:
     provider_name = st.session_state.get("llm_provider", _get_env_or_secret("LLM_PROVIDER", "groq")).lower()
     model_name = st.session_state.get("llm_model", None)
     
-    if provider_name == "gemini":
-        return GeminiProvider()
-    elif provider_name == "groq":
-        return GroqProvider(model_override=model_name)
-    elif provider_name == "huggingface":
-        return HuggingFaceProvider()
-    elif provider_name == "openai":
-        return OpenAIProvider()
-    else:
-        raise ValueError(f"Unknown LLM_PROVIDER: {provider_name}")
+    try:
+        if provider_name == "gemini":
+            return GeminiProvider()
+        elif provider_name == "groq":
+            return GroqProvider(model_override=model_name)
+        elif provider_name == "huggingface":
+            return HuggingFaceProvider()
+        elif provider_name == "openai":
+            return OpenAIProvider()
+        else:
+            raise ValueError(f"Unknown LLM_PROVIDER: {provider_name}")
+    except ValueError as e:
+        # Smart fallback: If the requested provider doesn't have a key, try finding one that does
+        if "not found" in str(e).lower():
+            # Try all providers in order of preference
+            providers = [
+                ("gemini", GeminiProvider),
+                ("groq", GroqProvider),
+                ("openai", OpenAIProvider),
+                ("huggingface", HuggingFaceProvider)
+            ]
+            
+            for name, provider_class in providers:
+                if name != provider_name:
+                    try:
+                        return provider_class()
+                    except (ValueError, ImportError):
+                        continue
+                        
+        # If all fallbacks fail, raise the original error
+        raise e
