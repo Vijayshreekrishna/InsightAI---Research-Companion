@@ -8,41 +8,33 @@ vector storage. Works fully offline after first model download (~90 MB).
 import os
 import re
 from typing import List, Dict, Any
+import streamlit as st
 
-# Lazy imports to avoid startup cost if not used
-_chroma_client = None
-_collection = None
-_embedding_fn = None
-
-LIBRARY_PATH = "./insights_library"
+# Make LIBRARY_PATH absolute relative to the project root
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LIBRARY_PATH = os.path.join(BASE_DIR, "insights_library")
 COLLECTION_NAME = "research_papers"
 CHUNK_SIZE = 600       # chars per chunk
 CHUNK_OVERLAP = 100    # overlap between chunks
 
 
-def _get_embedding_function():
-    """Lazily load sentence-transformers embedding function."""
-    global _embedding_fn
-    if _embedding_fn is None:
-        from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
-        _embedding_fn = SentenceTransformerEmbeddingFunction(
-            model_name="all-MiniLM-L6-v2"
-        )
-    return _embedding_fn
+@st.cache_resource
+def _get_chroma_client():
+    import chromadb
+    return chromadb.PersistentClient(path=LIBRARY_PATH)
 
+@st.cache_resource
+def _get_embedding_function():
+    from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
+    return SentenceTransformerEmbeddingFunction(model_name="all-MiniLM-L6-v2")
 
 def _get_collection():
-    """Lazily initialise ChromaDB client and collection."""
-    global _chroma_client, _collection
-    if _collection is None:
-        import chromadb
-        _chroma_client = chromadb.PersistentClient(path=LIBRARY_PATH)
-        _collection = _chroma_client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            embedding_function=_get_embedding_function(),
-            metadata={"hnsw:space": "cosine"},
-        )
-    return _collection
+    client = _get_chroma_client()
+    return client.get_or_create_collection(
+        name=COLLECTION_NAME,
+        embedding_function=_get_embedding_function(),
+        metadata={"hnsw:space": "cosine"},
+    )
 
 
 def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> List[str]:
@@ -120,6 +112,9 @@ def add_paper_to_library(paper_name: str, text: str) -> Dict[str, Any]:
     try:
         collection = _get_collection()
         chunks = _chunk_text(text)
+        
+        if not chunks:
+            return {"status": "error", "error": "No extractable text found in the document."}
 
         # Build safe document IDs (strip non-alphanumeric chars)
         safe_name = re.sub(r"[^a-zA-Z0-9_-]", "_", paper_name)

@@ -10,6 +10,7 @@ import streamlit as st
 from utils.api import call_api
 from utils.pdf_utils import extract_text_from_pdf
 from utils.rag_utils import get_library_stats, delete_paper_from_library
+import time
 
 st.title("📚 Local Insights Library")
 load_css("assets/styles.css")
@@ -25,6 +26,9 @@ st.markdown("### 📊 Library Status")
 stats = get_library_stats()
 total = stats.get("total_chunks", 0)
 papers = stats.get("papers", [])
+
+if stats.get("error"):
+    st.error(f"Library error: {stats.get('error')}")
 
 if total == 0:
     st.info("📭 Your library is empty. Add papers below to get started.")
@@ -72,6 +76,7 @@ if new_papers and st.button("📥 Add to Library", key="lib_add"):
         else:
             st.error(f"❌ Failed to add **{f.name}**: {result.get('error', 'Unknown error')}")
         progress.progress((i + 1) / len(new_papers))
+    time.sleep(2)
     st.rerun()
 
 # ── Cross-Paper Q&A ────────────────────────────────────────────────────────────
